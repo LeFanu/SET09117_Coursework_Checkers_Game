@@ -15,7 +15,7 @@ namespace Checkers_Game_Helper
     ** Design Patterns Used:
     *   Board is a Singleton class as there is only one board needed to play the game. And it has to be the same for both players
     *
-    ** Last Update: 16/10/2017
+    ** Last Update: 27/10/2017
     */
 
         //Singleton
@@ -25,26 +25,22 @@ namespace Checkers_Game_Helper
 
 //-------------- Instance Fields ------------------------------------------------------------------------
         private static int MAX_SIZE = 8;
-
-        //dictionary for storing the coordinates of fields and their state
-        private SortedDictionary<String, Position> playerPositions = new SortedDictionary<String, Position>();
-
-        //position and coordinates for the dictionary to use during the game
-        private String positionCoordinates;
-        private String fieldDesignation;
-        private Position pawnPosition;
+        
+        //grid of position objects to store the details about each field on board
+        private PiecePosition[,] gridYX = new PiecePosition[8, 8];
+        private PiecePosition pawnPiecePosition;
 
         //fields for setting the board with the positions
-        private const int TOP_LETTERS = 65;
+        private int TOP_LETTERS = 65;
         private const int SIDE_NUMBERS = 1;
-        private int topDesignation = TOP_LETTERS;
+        private int topDesignation = 1;
         private int sideDesignation = SIDE_NUMBERS;
 
-
-        public SortedDictionary<string, Position> PlayerPositions
+//_______________________________________________________________________________________________________________
+        public PiecePosition[,] GridYX
         {
-            get { return playerPositions; }
-            set { playerPositions = value; }
+            get { return gridYX; }
+            set { gridYX = value; }
         }
         public static Board CurrentBoardInstance
         {
@@ -53,17 +49,20 @@ namespace Checkers_Game_Helper
                 if (currentBoard_Instance == null)
                 {
                     currentBoard_Instance = new Board();
+                    
                 }
                 return currentBoard_Instance;
             }
             
         }
 
-//-------------- Class Constructor ------------------------------------------------------------------------
+        
 
+//-------------- Class Constructor ------------------------------------------------------------------------
         private Board()
         {
             resetBoardPositions();
+            
         }
 
 
@@ -86,8 +85,7 @@ namespace Checkers_Game_Helper
                 //writing each column
                 for (int j = 0; j < MAX_SIZE; j++)
                 {
-                    positionCoordinates = (char)topDesignation + sideDesignation.ToString();
-                    Console.Write("|" + fieldState(PlayerPositions[positionCoordinates].State) + "|");
+                    Console.Write("|" + fieldState(gridYX[i,j].State) + "|");
                     topDesignation++;
 
                 }
@@ -107,59 +105,56 @@ namespace Checkers_Game_Helper
         private void resetBoardPositions()
         {
             //writing each row with positions
-            for (int i = 1; i <= MAX_SIZE; i++)
+            for (int y = 1; y <= MAX_SIZE; y++)
             {
                 //writing each column
-                for (int j = 1; j <= MAX_SIZE; j++)
+                for (int x = 1; x <= MAX_SIZE; x++)
                 {
                     //creating new position object to save in the dictionary
-                    pawnPosition = new Position();
-
-                    //settings coordinates for the dictionary
-                    positionCoordinates = (char) topDesignation + sideDesignation.ToString();
+                    pawnPiecePosition = new PiecePosition();
 
                     //checking field validation
                     if ((sideDesignation%2 != 0 && topDesignation%2 != 0) || (sideDesignation % 2 == 0 && topDesignation % 2 == 0))
                     {
-                        //setting black pons
+                        //setting white pawns
                         if (sideDesignation <= 3)
                         {
-                            pawnPosition.State = PositionState.White;
-                            
+                            pawnPiecePosition.State = PieceState.White;
+                            pawnPiecePosition.PieceColour = PlayerColour.White;
                         }
-                        //setting white pons
+                        //setting red pawns
                         else if (sideDesignation >= 6)
                         {
-                            pawnPosition.State = PositionState.Black;
-                            
+                            pawnPiecePosition.State = PieceState.Red;
+                            pawnPiecePosition.PieceColour = PlayerColour.Red;
                         }
                         //remaining fields are empty
                         else
                         {
-                            pawnPosition.State = PositionState.Valid;
+                            pawnPiecePosition.State = PieceState.Valid;
                         }
                     }
                     //all other fields are invalid and their state will remain the same
                     else
                     {
-                            pawnPosition.State = PositionState.Invalid;
+                            pawnPiecePosition.State = PieceState.Invalid;
                     }
                     //adding current coordinates state to the dictionary as a part of the board
-                    pawnPosition.LetterCoordinates = (PositionLetterCoordinates)topDesignation;
-                    pawnPosition.SideCoordinates = sideDesignation;
-                    pawnPosition.getOponent();
-                    PlayerPositions.Add(positionCoordinates, pawnPosition);
+                    pawnPiecePosition.XCoordinates = topDesignation;
+                    pawnPiecePosition.YCoordinates = sideDesignation; 
+
+                    GridYX[y - 1,x - 1] = pawnPiecePosition;
                     //moving to the next field
                     topDesignation++;
-                    
+
                 }
 
                 //setting letters back to A and moving row down
                 sideDesignation++;
-                topDesignation = TOP_LETTERS;
+                topDesignation = 1;
             }
             sideDesignation = SIDE_NUMBERS;
-            topDesignation = TOP_LETTERS;
+            topDesignation = 1;
         }
 
 
@@ -184,34 +179,34 @@ namespace Checkers_Game_Helper
             String fieldDesignation = " ";
             switch (fieldState)
             {
-                case PositionState.Invalid:
+                case PieceState.Invalid:
                 {
                     fieldDesignation = "__";
                     break;
                 }
-                case PositionState.Valid:
+                case PieceState.Valid:
                 {
                     fieldDesignation = "  ";
                         break;
                 }
-                case PositionState.White:
+                case PieceState.White:
                 {
                     fieldDesignation = " w";
                         break;
                 }
-                case PositionState.Black:
+                case PieceState.Red:
                 {
-                    fieldDesignation = " b";
+                    fieldDesignation = " r";
                         break;
                 }
-                case PositionState.White_King:
+                case PieceState.White_King:
                 {
                     fieldDesignation = " W";
                         break;
                 }
-                case PositionState.Black_King:
+                case PieceState.Red_King:
                 {
-                    fieldDesignation = " B";
+                    fieldDesignation = " R";
                         break;
                 }
 

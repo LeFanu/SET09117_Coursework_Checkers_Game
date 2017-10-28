@@ -45,9 +45,10 @@
     <Compile Include="Game.cs" />
     <Compile Include="GameType.cs" />
     <Compile Include="Player.cs" />
-    <Compile Include="Position.cs" />
+    <Compile Include="PiecePosition.cs" />
+    <Compile Include="PlayerColour.cs" />
     <Compile Include="PositionLetterCoordinates.cs" />
-    <Compile Include="PositionState.cs" />
+    <Compile Include="PieceState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

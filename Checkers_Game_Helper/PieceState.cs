@@ -9,17 +9,17 @@
     ** Future updates:
     *   
     *
-    ** Last Update: 16/10/2017
+    ** Last Update: 27/10/2017
     */
 
 
-    public enum PositionState
+    public enum PieceState
     {
         Invalid = -1,
         Valid = 0,
         White = 1,
-        Black = 2,
+        Red = 2,
         White_King = 3,
-        Black_King = 4
+        Red_King = 4
     }
 }

@@ -4,3 +4,9 @@ D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\Checkers_Game_
 D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\Checkers_Game_Helper\obj\Debug\Checkers_Game_Helper.csproj.CoreCompileInputs.cache
 D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\Checkers_Game_Helper\obj\Debug\Checkers_Game_Helper.dll
 D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\Checkers_Game_Helper\obj\Debug\Checkers_Game_Helper.pdb
+D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\Checkers_Game_Helper\bin\Debug\Checkers_Game_Helper.dll
+D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\Checkers_Game_Helper\bin\Debug\Checkers_Game_Helper.pdb
+D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\Checkers_Game_Helper\obj\Debug\Checkers_Game_Helper.csprojResolveAssemblyReference.cache
+D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\Checkers_Game_Helper\obj\Debug\Checkers_Game_Helper.csproj.CoreCompileInputs.cache
+D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\Checkers_Game_Helper\obj\Debug\Checkers_Game_Helper.dll
+D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\Checkers_Game_Helper\obj\Debug\Checkers_Game_Helper.pdb

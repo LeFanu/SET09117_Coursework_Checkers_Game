@@ -18,7 +18,7 @@ namespace Checkers_Game_Helper
     *   This class is a Singleton. The reason for this is that we want to have only one active game at the time.
     *   Another reason is that all related classess need to access some of the game data and it has to be the same for all
     *
-    ** Last Update: 16/10/2017
+    ** Last Update: 28/10/2017
     */
 
 
@@ -36,10 +36,11 @@ namespace Checkers_Game_Helper
         private Boolean winner;
         private String nameOfTheWinner;
         private int turn;
-
         private int movingPlayer = 1;
+        private List<int[]> possibleCaptureMoves = new List<int[]>();
+        private List<int[]> legalMoves = new List<int[]>();
 
-//__________________________________________________________________________________________________________
+        //__________________________________________________________________________________________________________
         public static Game CurrentGameInstance
         {
             get
@@ -53,6 +54,8 @@ namespace Checkers_Game_Helper
             }
         }
 
+        public List<int[]> getLegalMoves => legalMoves;
+
 //-------------- Class Constructor ------------------------------------------------------------------------
         private Game()
         {
@@ -60,9 +63,67 @@ namespace Checkers_Game_Helper
         }
 
 
-
 //|||||||||||||||||||||||||||||||||| CLASS METHODS |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
+            
+        //reset players and their state to default
+        public void setGame(string gameType)
+        {
+            
+            gameBoard = Board.CurrentBoardInstance;
+            //gameBoard.resetBoardPositions();
+            this.gameType = (GameType)Enum.Parse(typeof(GameType), gameType);
+            //players = new Player[2];
+            chooseGameType();
+            turn = 1;
+            winner = false;
+        }
+        
+        //choosing the type of the game to play based on selection from menu
+        private void chooseGameType()
+        {
+            //choosing game type depending on the game chosen in menu
+            switch (gameType)
+            {
+//***************CHANGE TO USE LIST**
+                case GameType.Player_VS_CPU:
+                {
+                    Console.Write("Player 1 please enter your name: >>> \t");
+                    players.Add(setPlayerName(1));
+                    players.Add(new AI_Player());
+                    break;
+                }
+                case GameType.Player_VS_Player:
+                {
+                    Console.Write("Player 1 please enter your name: >>> \t");
+                    players.Add(setPlayerName(1));
+                    Console.Write("Player 2 please enter your name: >>> \t");
+                    players.Add(setPlayerName(2));
+
+                    break;
+                }
+                case GameType.CPU_VS_Player:
+                {
+//***************CHANGE TO USE LIST**
+
+                        players[0] = new AI_Player();
+                    Console.Write("Player 2 please enter your name: >>> \t");
+                    players[1] = setPlayerName(2);
+                    break;
+                }
+                case GameType.CPU_VS_CPU:
+                {
+//***************CHANGE TO USE LIST*****
+
+                        players[0] = new AI_Player();
+                    players[1] = new AI_Player();
+                    break;
+                }
+            }
+//************* MAKE PROPER USE OF THIS
+            //players[0].IsMovingNow = true;
+        }
+        
         //main method for playing the game 
         public void PlayGame()
         {
@@ -81,13 +142,16 @@ Console.WriteLine();
                     gameBoard.drawNames(players[0], players[1], turn);
                    // Console.WriteLine("Player 1 colour is " + players[0].PawnsColour + "\tPlayer 2 colour is " + players[1].PawnsColour);
                     gameBoard.drawBoard();
+                    setPlayerPositions(players[playerMoving]);
+                    findLegalMoves(players[playerMoving]);
                     playerMove(players[playerMoving]);
-                    
+                    legalMoves.Clear();
                     //Need to check if player won at this point
                     if (checkIfWinner(players[playerMoving]))
                     {
                         break;
                     }
+                    
                     playerMoving++;
                 }
 
@@ -98,64 +162,9 @@ Console.WriteLine();
 
         }
 
-        //reset players and their state to default
-        public void setGame(string gameType)
-        {
-            this.gameType = (GameType)Enum.Parse(typeof(GameType), gameType);
-            //players = new Player[2];
-            chooseGameType();
-            gameBoard = Board.CurrentBoardInstance;
-            turn = 1;
-            winner = false;
-        }
-        
-        //choosing the type of the game to play based on selection from menu
-        private void chooseGameType()
-        {
-            //choosing game type depending on the game chosen in menu
-            switch (gameType)
-            {
-//***************CHANGE TO USE LIST**
-                case GameType.Player_VS_CPU:
-                {
-                    Console.Write("Player 1 please enter your name: >>> \t");
-                    players.Add(playerNames(1));
-                    players.Add(new AI_Player());
-                    break;
-                }
-                case GameType.Player_VS_Player:
-                {
-                    Console.Write("Player 1 please enter your name: >>> \t");
-                    players.Add(playerNames(1));
-                    Console.Write("Player 2 please enter your name: >>> \t");
-                    players.Add(playerNames(2));
-
-                    break;
-                }
-                case GameType.CPU_VS_Player:
-                {
-//***************CHANGE TO USE LIST**
-
-                        players[0] = new AI_Player();
-                    Console.Write("Player 2 please enter your name: >>> \t");
-                    players[1] = playerNames(2);
-                    break;
-                }
-                case GameType.CPU_VS_CPU:
-                {
-//***************CHANGE TO USE LIST*****
-
-                        players[0] = new AI_Player();
-                    players[1] = new AI_Player();
-                    break;
-                }
-            }
-//************* MAKE PROPER USE OF THIS
-            //players[0].IsMovingNow = true;
-        }
-
+ 
         //obtaining players names and returning objects
-        private Player playerNames(int playerNumber)
+        private Player setPlayerName(int playerNumber)
         {
             playerName = Console.ReadLine();
             try
@@ -170,7 +179,19 @@ Console.WriteLine();
             return temp;
         }
 
-        
+        public void setPlayerPositions(Player currentPlayer)
+        {
+            currentPlayer.PiecesOfThePlayer.Clear();
+            foreach (var position in gameBoard.GridYX)
+            {
+                if (position.State  == currentPlayer.PawnsColour)
+                {
+                    currentPlayer.PiecesOfThePlayer.Add(position);
+                }
+            }
+            currentPlayer.NumberOfPawns = currentPlayer.PiecesOfThePlayer.Count;
+        }
+
         //checking if any player has won
         private bool checkIfWinner(Player currentPlayer)
         {
@@ -178,12 +199,12 @@ Console.WriteLine();
             foreach (var player in players)
             {
                 //if player lost all pawns then the oponent won
-                 if (player.NumberOfPons == 0)
+                 if (player.NumberOfPawns == 0)
                  {
                         player.HasWon = false;
                         winner = true;
                     //if currently moving player is not the one who lost all pawns then it is a winner
-                    if (!currentPlayer.Equals(player) && currentPlayer.NumberOfPons > 0)
+                    if (!currentPlayer.Equals(player) && currentPlayer.NumberOfPawns > 0)
                      {
                         currentPlayer.HasWon = true;
                          nameOfTheWinner = currentPlayer.Name;
@@ -194,17 +215,15 @@ Console.WriteLine();
             return false;
         }
 
+        //procedure for a move of a player
         private void playerMove(Player currentPlayer)
         {
             //first check if current player can capture
-            //canCapture();
+            //currentPlayer.canCapture();
+            bool validStart;
+            bool validDestination;
 
-            //temporary variables for current method
-            String pawnStartCoordinates= "";
-            String pawnDestinationCoordinates = "";
-            String currentPlayerColour = currentPlayer.PawnsColour;
-
-
+            
             Console.WriteLine("\n");
 
             //first checking who's moving 
@@ -223,38 +242,95 @@ Console.WriteLine();
                     Console.WriteLine("\nComputer is moving");
                     //making a new reference variable to access AI Player methods
                     AI_Player aiPlayer = (AI_Player) currentPlayer;
-                    //checking if computer can make any move at all
+                //checking if computer can make any move at all
                     if (aiPlayer.canCapture())
                     {
-                        
+
                     }
                     else
                     {
-                        aiPlayer.checkIfMoveIsPossible();
+                        //aiPlayer.checkIfMoveIsPossible();
                         aiPlayer.makeRandomMove();
                     }
                 }
                 //if it's human asking what moves to make
                 else
                 {
-                    //asking for valid coordinates until they're valid
+                    bool validMove;
+                    //if both coordinates are valid, player can move
                     do
                     {
-                        Console.Write("\nPlease enter coordinates of the pawn you want to move: >>>\t");
-                        currentPlayer.isValidStartPosition(currentPlayerColour);
-                    } while (!currentPlayer.ValidStart);
-
-                    do
-                    {
-                        Console.Write("\nPlease enter destination coordinates >>>\t");
-                        currentPlayer.isValidDestination();
-                    } while (!currentPlayer.ValidDedstination);
+                        validMove = currentPlayer.makeValidMove();
+                    } while (!validMove);
                 }
-                //if both coordinates are valid, player can move
-                currentPlayer.isValidMove();
-            movingPlayer++;
+                
+                movingPlayer++;
         }
 
+
+        private void findLegalMoves(Player currentPlayer)
+        {
+            int x;
+            int y;
+            PieceState startFieldState;
+            PieceState destinationFieldState;
+            foreach (PiecePosition piece in currentPlayer.PiecesOfThePlayer)
+            {
+                x = piece.XCoordinates;
+                y = piece.YCoordinates;
+                startFieldState = checkFieldState(y, x );
+                
+                //check if starting field is players field
+                if (startFieldState == currentPlayer.PawnsColour)
+                {
+                    //checking the orientation of the player
+                    //if goes down
+                    if (currentPlayer.PawnsColour == PieceState.White)
+                    {
+                        destinationFieldState = checkFieldState(y + 1, x - 1);
+                        if (destinationFieldState == PieceState.Valid)
+                        {
+                            int[] coordinates = { y, x, y + 1, x - 1};
+                            legalMoves.Add(coordinates);
+                        }
+                        destinationFieldState = checkFieldState(y + 1, x + 1);
+                        if (destinationFieldState == PieceState.Valid)
+                        {
+                            int[] coordinates = { y, x, y + 1, x + 1 };
+                            legalMoves.Add(coordinates);
+                        }
+                    }
+                    //if goes up
+                    else
+                    {
+                        destinationFieldState = checkFieldState(y - 1, x - 1);
+                        if (destinationFieldState == PieceState.Valid)
+                        {
+                            int[] coordinates = { y, x, y - 1, x - 1 };
+                            legalMoves.Add(coordinates);
+                        }
+                        destinationFieldState = checkFieldState(y - 1, x + 1);
+                        if (destinationFieldState == PieceState.Valid)
+                        {
+                            int[] coordinates = { y, x, y - 1, x + 1 };
+                            legalMoves.Add(coordinates);
+                        }
+                    }
+                }
+            }
+        }
+
+        public PieceState checkFieldState(int y, int x)
+        {
+            //arrays are numbered from 0, therefore we need one less of each coordinate
+            y--;
+            x--;
+            if (x >= 0 && x < 8 && y >= 0 && y < 8)
+            {
+                return gameBoard.GridYX[y, x].State;
+            }
+            return PieceState.Invalid;
+        }
     }
 
     

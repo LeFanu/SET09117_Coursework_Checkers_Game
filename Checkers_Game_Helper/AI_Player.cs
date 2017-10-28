@@ -14,109 +14,57 @@ namespace Checkers_Game_Helper
     *   
     ** Design Patterns Used:
     *
-    ** Last Update: 24/10/2017
+    ** Last Update: 26/10/2017
     */
 
-//-------------- Class Constructor ------------------------------------------------------------------------
     public class AI_Player : Player
     {
 //-------------- Instance Fields ------------------------------------------------------------------------
 
-        //list of valid moves
-        private List<String[]> validMoves = new List<String[]>();
         
 //-------------- Class Constructor ------------------------------------------------------------------------
         public AI_Player()
         {
             Name = "Computer";
             //chooseColour(number);
-            pawnsColour = "Black";
+            numberOfPawns = 12;
+            pawnsColour = PieceState.Red;
             orientation = "Up";
-            setPositions();
         }
 
 //|||||||||||||||||||||||| CLASS METHODS |||||||||||||||||||||||||||||||||||||||||
 
         //cheacking each pawn in the player's collection if there is available move       
-        public  void checkIfMoveIsPossible()
-        {
-            int letter;
-            int side;
-            string startCoordinates;
-            //string fieldState;
-            foreach (var pawn in pawnsPositions)
-            {
-                letter = (int)pawn.Value.LetterCoordinates;
-                side = pawn.Value.SideCoordinates;
-                startCoordinates = pawn.Key;
-
-                getStatusOfFieldsAhead(letter, side, startCoordinates);
-
-            }
-        }
-
-        private void getStatusOfFieldsAhead(int letter, int row, string startCooridnates)
-        {
-            String fieldState;
-            if (letter > 65)
-            {
-                if (orientation.Equals("Up"))
-                {
-                    leftDiagonalField = (char)(letter - 1) + (row - 1).ToString();
-                }
-                else
-                {
-                    leftDiagonalField = (char)(letter - 1) + (row + 1).ToString();
-                }
-
-                fieldState = currentBoard.PlayerPositions[leftDiagonalField].State.ToString();
-                if (fieldState.Equals("Valid"))
-                {
-                    String[] validMove = { startCooridnates, leftDiagonalField };
-
-                    validMoves.Add(validMove);
-                }
-                
-
-            }
-            if (letter < 72)
-            {
-
-                if (orientation.Equals("Up"))
-                {
-                    rightDiagonalField = (char)(letter + 1) + (row - 1).ToString();
-                }
-                else
-                {
-                    rightDiagonalField = (char)(letter + 1) + (row + 1).ToString();
-                }
-
-                fieldState = currentBoard.PlayerPositions[rightDiagonalField].State.ToString();
-                if (fieldState.Equals("Valid"))
-                {
-                    String[] validMove = { startCooridnates, rightDiagonalField };
-                    validMoves.Add(validMove);
-                }
-
-            }
-
-        }
 
         //making random move from the list of available ones
         public void makeRandomMove()
         {
+            //get available legal moves for this player
+            legalMoves = currentGame.getLegalMoves;
+            //get random to choose one of the moves
             Random rnd = new Random();
-            int randomMove = rnd.Next(validMoves.Count);
-            ValidStart = true;
-            ValidDedstination = true;
-            StartCoordinates = validMoves[randomMove][0];
-            DestinationCoordinates = validMoves[randomMove][1];
-            System.Threading.Thread.Sleep(500);
-            Console.WriteLine("Start coordinates: " + StartCoordinates);
-            System.Threading.Thread.Sleep(500);
-            Console.WriteLine("Destination coordinates: " + DestinationCoordinates);
-            System.Threading.Thread.Sleep(500);
-            isValidMove();
+            try
+            {
+                int randomMove = rnd.Next(0, (legalMoves.Count - 1));
+
+                //get random move
+                int[] selectedMove = legalMoves[randomMove];
+                currentBoard.GridYX[selectedMove[0] - 1, selectedMove[1] - 1].State = PieceState.Valid;
+                currentBoard.GridYX[selectedMove[2] - 1, selectedMove[3] - 1].State = PawnsColour;
+
+                String startCoordinates = (char)(selectedMove[1] + 64) + selectedMove[0].ToString();
+                String destinationCoordinates = (char)(selectedMove[3] + 64) + selectedMove[2].ToString();
+                System.Threading.Thread.Sleep(500);
+                Console.WriteLine("Start coordinates: " + startCoordinates);
+                System.Threading.Thread.Sleep(500);
+                Console.WriteLine("Destination coordinates: " + destinationCoordinates);
+                System.Threading.Thread.Sleep(500);
+            }
+            catch (Exception )
+            {
+                Console.WriteLine("This player has no valid moves this turn");
+            }
+
 
             Console.Write("Player turn in ");
             for (int i = 3; i > 0; i--)
