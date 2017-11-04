@@ -18,8 +18,6 @@
         Invalid = -1,
         Valid = 0,
         White = 1,
-        Red = 2,
-        White_King = 3,
-        Red_King = 4
+        Red = 2
     }
 }

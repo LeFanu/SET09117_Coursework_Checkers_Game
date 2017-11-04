@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C615E3F0-5A19-4746-8201-0926FEB898FC}</ProjectGuid>
+    <ProjectGuid>{CB76B1E9-A741-4B9F-9CFA-5FDF55D1B52A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Checkers_Game_Helper</RootNamespace>
-    <AssemblyName>Checkers_Game_Helper</AssemblyName>
+    <RootNamespace>GameHistory_MementoPattern</RootNamespace>
+    <AssemblyName>GameHistory_MementoPattern</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -40,23 +40,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AI_Player.cs" />
-    <Compile Include="Board.cs" />
-    <Compile Include="BoardState_Memento.cs" />
-    <Compile Include="Game.cs" />
-    <Compile Include="GameHistory_Caretaker.cs" />
-    <Compile Include="GameType.cs" />
-    <Compile Include="Move_Originator.cs" />
-    <Compile Include="Player.cs" />
-    <Compile Include="PiecePosition.cs" />
-    <Compile Include="PieceState.cs" />
+    <Compile Include="GameBoardState.cs" />
+    <Compile Include="GameHistory.cs" />
+    <Compile Include="MovesHistory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CommandPattern\CommandPattern.csproj">
-      <Project>{4156b172-aed1-482a-b455-cabe78d43282}</Project>
-      <Name>CommandPattern</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

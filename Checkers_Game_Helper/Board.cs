@@ -11,14 +11,17 @@ namespace Checkers_Game_Helper
     *   It is responsible to print and reset the board as required and will provide all the logic for the interactions with the board.
     *
     ** Future updates:
+    *   This class should provide all the interactions with the board. At this point Player class is changing the status of the fields after the move.
+    *   It would be more reasonable and better if this class would do so.
+    *   This class presents the board and reset the board to original state at the begining of the game
     *   
     ** Design Patterns Used:
     *   Board is a Singleton class as there is only one board needed to play the game. And it has to be the same for both players
     *
-    ** Last Update: 27/10/2017
+    ** Last Update: 04/11/2017
     */
 
-        //Singleton
+     //Singleton Class
     public class Board
     {
         private static Board currentBoard_Instance;
@@ -27,20 +30,19 @@ namespace Checkers_Game_Helper
         private static int MAX_SIZE = 8;
         
         //grid of position objects to store the details about each field on board
-        private PiecePosition[,] gridYX = new PiecePosition[8, 8];
+        private PiecePosition[,] gridXY = new PiecePosition[8, 8];
         private PiecePosition pawnPiecePosition;
 
         //fields for setting the board with the positions
-        private int TOP_LETTERS = 65;
-        private const int SIDE_NUMBERS = 1;
-        private int topDesignation = 1;
-        private int sideDesignation = SIDE_NUMBERS;
+        private int topLetters = 65;
+        private int topDesignation = 0;
+        private int sideDesignation = 0;
 
 //_______________________________________________________________________________________________________________
-        public PiecePosition[,] GridYX
+        public PiecePosition[,] GridXY
         {
-            get { return gridYX; }
-            set { gridYX = value; }
+            get { return gridXY; }
+            set { gridXY = value; }
         }
         public static Board CurrentBoardInstance
         {
@@ -56,13 +58,10 @@ namespace Checkers_Game_Helper
             
         }
 
-        
-
 //-------------- Class Constructor ------------------------------------------------------------------------
         private Board()
         {
             resetBoardPositions();
-            
         }
 
 
@@ -75,58 +74,59 @@ namespace Checkers_Game_Helper
             drawLetterCoordinates();
 
             //writing each row with positions
-            for (int i = 0; i < MAX_SIZE; i++)
+            for (int y = 0; y < MAX_SIZE; y++)
             {
                 Console.WriteLine("\n\t   ________________________________");
                 //position on the left side of the board
-                Console.Write("\t "+ sideDesignation + " ");
-
+                Console.Write("\t "+ (sideDesignation + 1) + " ");
 
                 //writing each column
-                for (int j = 0; j < MAX_SIZE; j++)
+                for (int x = 0; x < MAX_SIZE; x++)
                 {
-                    Console.Write("|" + fieldState(gridYX[i,j].State) + "|");
+                    Console.Write("|" + fieldState(x,y) + "|");
                     topDesignation++;
-
                 }
-                topDesignation = TOP_LETTERS;
-                Console.Write("  " + sideDesignation + " ");
-                sideDesignation++;
 
+                topDesignation = topLetters;
+                Console.Write("  " + ( sideDesignation + 1) + " ");
+                sideDesignation++;
             }
 
             //Writing bottom line of positions
             Console.Write("\t  ");           
             drawLetterCoordinates();
-            sideDesignation = SIDE_NUMBERS;
+            Console.WriteLine();
+            sideDesignation = 0;
         }
 
         //method for reseting the board at start or when quiting the game
         private void resetBoardPositions()
         {
             //writing each row with positions
-            for (int y = 1; y <= MAX_SIZE; y++)
+            for (int y = 0; y < MAX_SIZE; y++)
             {
                 //writing each column
-                for (int x = 1; x <= MAX_SIZE; x++)
+                for (int x = 0; x < MAX_SIZE; x++)
                 {
                     //creating new position object to save in the dictionary
                     pawnPiecePosition = new PiecePosition();
-
                     //checking field validation
-                    if ((sideDesignation%2 != 0 && topDesignation%2 != 0) || (sideDesignation % 2 == 0 && topDesignation % 2 == 0))
+                    if ((sideDesignation%2 != 0 && topDesignation%2 != 0) || ( topDesignation % 2 == 0 && sideDesignation % 2 == 0 ) )
                     {
                         //setting white pawns
-                        if (sideDesignation <= 3)
+                        if (sideDesignation < 3)
                         {
-                            pawnPiecePosition.State = PieceState.White;
-                            pawnPiecePosition.PieceColour = PlayerColour.White;
+//TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                            if (sideDesignation > 0)
+                            {
+                                pawnPiecePosition.IsKing = true;
+                            }
+                                pawnPiecePosition.State = PieceState.White;
                         }
                         //setting red pawns
-                        else if (sideDesignation >= 6)
+                        else if (sideDesignation >= 5)
                         {
                             pawnPiecePosition.State = PieceState.Red;
-                            pawnPiecePosition.PieceColour = PlayerColour.Red;
                         }
                         //remaining fields are empty
                         else
@@ -143,18 +143,17 @@ namespace Checkers_Game_Helper
                     pawnPiecePosition.XCoordinates = topDesignation;
                     pawnPiecePosition.YCoordinates = sideDesignation; 
 
-                    GridYX[y - 1,x - 1] = pawnPiecePosition;
+                    GridXY[x,y] = pawnPiecePosition;
                     //moving to the next field
                     topDesignation++;
-
                 }
 
                 //setting letters back to A and moving row down
                 sideDesignation++;
-                topDesignation = 1;
+                topDesignation = 0;
             }
-            sideDesignation = SIDE_NUMBERS;
-            topDesignation = 1;
+            sideDesignation = 0;
+            topDesignation = 0;
         }
 
 
@@ -166,16 +165,17 @@ namespace Checkers_Game_Helper
             for (int i = 0; i < MAX_SIZE; i++)
             {
                 //casting integer to letter charachter
-                Console.Write("  " + (char)topDesignation + " ");
-                topDesignation++;
+                Console.Write("  " + (char)topLetters + " ");
+                topLetters++;
             }
-            topDesignation = TOP_LETTERS;
+            topLetters = 65;
         }
 
 
         //method for printing board fields depending on the state
-        private String fieldState(Enum fieldState)
+        private String fieldState(int x, int y)
         {
+            Enum fieldState = gridXY[x, y].State;
             String fieldDesignation = " ";
             switch (fieldState)
             {
@@ -191,22 +191,26 @@ namespace Checkers_Game_Helper
                 }
                 case PieceState.White:
                 {
-                    fieldDesignation = " w";
-                        break;
+                    if (gridXY[x,y].IsKing)
+                    {
+                        fieldDesignation = " W";
+                    }
+                    else
+                    {
+                        fieldDesignation = " w";
+                    }
+                    break;
                 }
                 case PieceState.Red:
                 {
-                    fieldDesignation = " r";
-                        break;
-                }
-                case PieceState.White_King:
-                {
-                    fieldDesignation = " W";
-                        break;
-                }
-                case PieceState.Red_King:
-                {
-                    fieldDesignation = " R";
+                    if (gridXY[x, y].IsKing)
+                    {
+                        fieldDesignation = " R";
+                    }
+                    else
+                    {
+                        fieldDesignation = " r";
+                    }
                         break;
                 }
 
@@ -214,13 +218,13 @@ namespace Checkers_Game_Helper
             return fieldDesignation;
         }
 
-        public void drawNames(Player player1, Player player2, int turn)
+        public void drawNames(Player player1, Player player2, String turnColour, int turn)
         {
             Console.WriteLine();
             Console.WriteLine();
             Console.WriteLine("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
-            Console.WriteLine("Turn " + turn + " starts: ");
-            Console.WriteLine("Player 1: " + player1.Name + " " + player1.PawnsColour + "\t\t\tPlayer 2: " + player2.Name + " " + player2.PawnsColour);
+            Console.WriteLine("Turn " + turn + ": " + turnColour + " player moves now: ");
+            Console.WriteLine("Player 1: " + player1.Name + " " + player1.PawnsColour + " " + player1.NumberOfPawns + "\t\t\tPlayer 2: " + player2.Name + " " + player2.PawnsColour + " " + player2.NumberOfPawns);
             Console.Write("________________________________________________________________________________________");
         }
     }

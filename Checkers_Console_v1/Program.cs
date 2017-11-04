@@ -26,6 +26,9 @@ namespace Checkers_Console_v1
         ** Last Update: 16/10/2017
         */
 
+        private static List<GameHistory_Caretaker> savedGames;
+
+
         static void Main(string[] args)
         {
 
@@ -38,9 +41,10 @@ namespace Checkers_Console_v1
 
             //mainMenu();
             Game testingBoard = Game.CurrentGameInstance;
-            testingBoard.setGame("1");
+            testingBoard.setGame("3");
             testingBoard.PlayGame();
-
+            saveLastPlayedGame(testingBoard.GameHistory);
+            
             Console.ReadKey();
         }
 
@@ -53,8 +57,7 @@ namespace Checkers_Console_v1
                 Console.WriteLine("Please choose one of the following options:");
                 Console.WriteLine("\t 1.Start New Game");
                 Console.WriteLine("\t 2.Replay Game");
-                Console.WriteLine("\t 3.Save Last Game");
-                Console.WriteLine("\t 4.Quit");
+                Console.WriteLine("\t 3.Quit");
 
                 Console.Write("Please enter your choice >>> \t");
                 option = Int32.Parse(Console.ReadLine());
@@ -65,7 +68,6 @@ namespace Checkers_Console_v1
                         {
                             Console.WriteLine("\nStarting New Game...");
                             int gameOption;
-
                             Game chosenGame;
 
                             do
@@ -74,9 +76,8 @@ namespace Checkers_Console_v1
                                 Console.WriteLine("Please choose one of the following options:");
                                 Console.WriteLine("\t 1.Player VS Computer");
                                 Console.WriteLine("\t 2.Player VS Player");
-                                Console.WriteLine("\t 3.Computer VS Player");
-                                Console.WriteLine("\t 4.Computer VS Computer");
-                                Console.WriteLine("\t 5. Return to previous menu");
+                                Console.WriteLine("\t 3.Computer VS Computer");
+                                Console.WriteLine("\t 4. Return to previous menu");
 
                                 Console.Write("Please enter your choice >>> \t");
                                 gameOption = Int32.Parse(Console.ReadLine());
@@ -90,39 +91,34 @@ namespace Checkers_Console_v1
                                     case 4:
                                     {
                                         chosenGame = Game.CurrentGameInstance;
-                                            chosenGame.setGame(gameOption.ToString());
-                                            chosenGame.PlayGame();
-                                            break;
-                                        }
+                                        chosenGame.setGame(gameOption.ToString());
+                                        chosenGame.PlayGame();
+                                        saveLastPlayedGame(chosenGame.GameHistory);
+                                        break;
+                                    }
 
                                     case 5:
-                                        {
+                                    {
 
-                                            break;
-                                        }
+                                        break;
+                                    }
                                     default:
-                                        {
-                                            Console.WriteLine("\nPlease choose one of the given options.");
-                                            break;
-                                        }
+                                    {
+                                        Console.WriteLine("\nPlease choose one of the given options.");
+                                        break;
+                                    }
                                 }
-                            } while (gameOption != 5);
+                            } while (gameOption != 4);
                             break;
                         }
                     case 2:
+                    {
+                        //savedGames =  loadSavedGames();
+                        foreach (GameHistory_Caretaker savedGame in savedGames)
                         {
-
-                            break;
+                            
                         }
-                    case 3:
-                        {
-
-                            break;
-                        }
-                    case 4:
-                        {
-
-                            break;
+                        break;
                         }
                     default:
                         {
@@ -130,10 +126,47 @@ namespace Checkers_Console_v1
                             break;
                         }
                 }
+            } while (option != 3);
 
-            } while (option != 4);
-
-            
         }
+
+        private static void saveLastPlayedGame(GameHistory_Caretaker gameHistory)
+        {
+            Console.WriteLine("\n___________________________________________________________________________________________________________\n");
+            Console.WriteLine("Do you want to save the game you just played to replay this later?");
+            string choice;
+            int option = - 1;
+
+                choice = Console.ReadLine();
+                try
+                {
+                    option = Int32.Parse(choice);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Please choose 1 for yes or anything else for no.");
+                }
+
+            if (option == 1)
+            {
+                //save current game
+                try
+                {
+                    savedGames.Add(gameHistory);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("There are no saved games or the file was corrupted.");
+                }
+            }
+        }
+
+        //private static List<GameHistory_Caretaker> loadSavedGames()
+        //{
+        //    //read from a file
+
+        //    //add saved games to the list
+
+        //}
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-
+using System.Threading;
 
 namespace Checkers_Game_Helper
 {
@@ -8,13 +7,17 @@ namespace Checkers_Game_Helper
     * Created by Karol Pasierb on 16/10/2017
     *
     ** Description:
-    *   This class is to provide a player for the game with all the features needed.
+    *   This class is to provide AI player for the game with all the features needed.
+    *   At this point it consists only of one method for making random move. 
+    *   It simply checks all of it's possible moves and select one at random.
+    *   There is no need to worry about capture moves as they will be only valid ones if they exist.
+    *   The rest of the logic happens in superclass
     *
     ** Future updates:
     *   
     ** Design Patterns Used:
     *
-    ** Last Update: 26/10/2017
+    ** Last Update: 04/11/2017
     */
 
     public class AI_Player : Player
@@ -23,55 +26,56 @@ namespace Checkers_Game_Helper
 
         
 //-------------- Class Constructor ------------------------------------------------------------------------
-        public AI_Player()
+        public AI_Player(String colour) : base("Computer", colour)
         {
-            Name = "Computer";
-            //chooseColour(number);
-            numberOfPawns = 12;
-            pawnsColour = PieceState.Red;
-            orientation = "Up";
+
         }
 
 //|||||||||||||||||||||||| CLASS METHODS |||||||||||||||||||||||||||||||||||||||||
-
-        //cheacking each pawn in the player's collection if there is available move       
-
+     
         //making random move from the list of available ones
         public void makeRandomMove()
         {
-            //get available legal moves for this player
-            legalMoves = currentGame.getLegalMoves;
             //get random to choose one of the moves
             Random rnd = new Random();
+            int[] selectedMove = { -1};
+
             try
             {
-                int randomMove = rnd.Next(0, (legalMoves.Count - 1));
-
+                int randomMove = rnd.Next(0, (legalMoves.Count));
                 //get random move
-                int[] selectedMove = legalMoves[randomMove];
-                currentBoard.GridYX[selectedMove[0] - 1, selectedMove[1] - 1].State = PieceState.Valid;
-                currentBoard.GridYX[selectedMove[2] - 1, selectedMove[3] - 1].State = PawnsColour;
-
-                String startCoordinates = (char)(selectedMove[1] + 64) + selectedMove[0].ToString();
-                String destinationCoordinates = (char)(selectedMove[3] + 64) + selectedMove[2].ToString();
-                System.Threading.Thread.Sleep(500);
-                Console.WriteLine("Start coordinates: " + startCoordinates);
-                System.Threading.Thread.Sleep(500);
-                Console.WriteLine("Destination coordinates: " + destinationCoordinates);
-                System.Threading.Thread.Sleep(500);
+                selectedMove = legalMoves[randomMove];                
             }
             catch (Exception )
             {
+                //if the array is returned empty it means there are no moves for the player
                 Console.WriteLine("This player has no valid moves this turn");
             }
 
+            //if there is any move we want to make it
+            if (selectedMove[0] != -1)
+            {
+                //this method changes all the fields on the board and adjust them to match the chosen move
+                changeFieldsOnBoardAfterMove(selectedMove);
+
+                //the code below simply informs what move computer is taking
+                String startCoordinates = (char)(selectedMove[0] + 65) + (selectedMove[1] + 1).ToString();
+                String destinationCoordinates = (char)(selectedMove[2] + 65) + (selectedMove[3] + 1).ToString();
+                Thread.Sleep(500);
+                Console.WriteLine("Start coordinates: " + startCoordinates);
+                Thread.Sleep(500);
+                Console.WriteLine("Destination coordinates: " + destinationCoordinates);
+                Thread.Sleep(200);
+            }
 
             Console.Write("Player turn in ");
             for (int i = 3; i > 0; i--)
             {
                 Console.Write(i + "... ");
-                System.Threading.Thread.Sleep(1000);
+                Thread.Sleep(800);
             }
         }
+
+        
     }
 }

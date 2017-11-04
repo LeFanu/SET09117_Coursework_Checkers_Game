@@ -17,7 +17,6 @@
     {
         Player_VS_CPU = 1,
         Player_VS_Player = 2,
-        CPU_VS_Player = 3,
-        CPU_VS_CPU = 4
+        CPU_VS_CPU = 3
     }
 }

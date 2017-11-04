@@ -6,29 +6,25 @@ namespace Checkers_Game_Helper
     * Created by Karol Pasierb on 2017/10/08
     *
     ** Description:
-    * This class contains the details of each field of the board and providing information of it's current state
+    * This class contains the details of each field of the board and providing information of it's current state.
+    * piecestate variable is used for information about each field's state as they can change. This utilizes enums. 
+    * Other variables are self explanatory. The reason why all this data exists together as a class 
+    * is that this would be always required together and this was the most reasonable decision to put it together
     *
     ** Future updates:
-    *   
-    ** Design Patterns Used:
     *
-    ** Last Update: 16/10/2017
+    ** Last Update: 04/11/2017
     */
 
 
-    public class PiecePosition
+    public class PiecePosition : ICloneable
     {
 //-------------- Instance Fields ------------------------------------------------------------------------
         private PieceState pieceState;
-        
         private Boolean isKing;
-        private PlayerColour pieceColour;
         private int yCoordinates;
         private int xCoordinates;
 
-        
-        //POSSIBLY NOT NEEDED
-        private int[] neighbourFields;
 
         public PieceState State
         {
@@ -45,57 +41,18 @@ namespace Checkers_Game_Helper
             get { return yCoordinates; }
             set { yCoordinates = value; }
         }
-        public int[] NeighbourFields
-        {
-            get { return neighbourFields; }
-            set { neighbourFields = value; }
-        }
         public bool IsKing
         {
             get { return isKing; }
             set { isKing = value; }
         }
-        public PlayerColour PieceColour
-        {
-            get { return pieceColour; }
-            set { pieceColour = value; }
-        }
-
-
-//-------------- Class Constructor ------------------------------------------------------------------------
-        public PiecePosition()
-        {
-
-        }
 
 
         //|||||||||||||||||||||||| CLASS METHODS |||||||||||||||||||||||||||||||||||||||||
 
-        //checking the given field
-        
-
-
-        //********* TO UPDATE OR CHANGE
-        public void setDiagonalFields(int currentField)
+        public object Clone()
         {
-            NeighbourFields = new int[4];
-            NeighbourFields[0] = currentField - 9;
-            NeighbourFields[1] = currentField - 7;
-            NeighbourFields[2] = currentField + 7;
-            NeighbourFields[3] = currentField + 9;
-            int i = 0;
-            foreach (int fieldDistance in NeighbourFields)
-            {
-                
-                if (fieldDistance <= 1)
-                {
-                    NeighbourFields[i] = -1;
-                }
-                i++;
-            }
-                
-            
+            return MemberwiseClone();
         }
-        
     }
 }

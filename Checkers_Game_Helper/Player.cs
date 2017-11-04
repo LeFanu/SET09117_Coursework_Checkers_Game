@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Checkers_Game_Helper
 {
@@ -8,41 +9,37 @@ namespace Checkers_Game_Helper
     *
     ** Description:
     *   This class is to provide a player for the game with all the features needed.
+    *   This class holds the list of all player Pawns and array for legal move chosen during the turn
+    *   
     *
     ** Future updates:
     *   
     ** Design Patterns Used:
     *
-    ** Last Update: 27/10/2017
+    ** Last Update: 04/11/2017
     */
-
 
 
     public class Player
     {
 //-------------- Instance Fields ------------------------------------------------------------------------
         protected String name;
-//********************* NOT NEEDED
-       // protected Boolean isMovingNow;
+
         protected Boolean hasWon;
 
         protected int numberOfPawns;
         protected PieceState pawnsColour;
-        protected String oponent;
+        protected PieceState opponent;
 
         //collections of pawns positions with the details about each field
         protected List<PiecePosition> piecesOfThePlayer = new List<PiecePosition>();
-
         protected List<int[]> legalMoves;
+
+        protected Boolean captureMovePossible;
+
         //instance of the board for a current game
         protected Board currentBoard = Board.CurrentBoardInstance;
         protected Game currentGame = Game.CurrentGameInstance;
-
-        //coordinates validation
-        private bool validStart;
-        private bool validDedstination;
-
-        protected String orientation;
 
 //_______________________________________________________________________________________________
         public string Name
@@ -65,119 +62,160 @@ namespace Checkers_Game_Helper
             get { return hasWon; }
             set { hasWon = value; }
         }
-
-        public bool ValidStart
-        {
-            get { return validStart; }
-            set { validStart = value; }
-        }
-        public bool ValidDedstination
-        {
-            get { return validDedstination; }
-            set { validDedstination = value; }
-        }
-
         public List<PiecePosition> PiecesOfThePlayer
         {
             get { return piecesOfThePlayer; }
             set { piecesOfThePlayer = value; }
         }
-
+        public PieceState GetOpponent => opponent;
+        public bool CaptureMovePossible => captureMovePossible;
 
 //-------------- Class Constructor ------------------------------------------------------------------------
-        public Player()
-        {
-            
-        }
-
-        public Player(String name, int playerNumber)
+        public Player(String name, String playerColour)
         {
             this.name = name;
+            if (playerColour.Equals("White"))
+            {
+                pawnsColour = PieceState.White;
+                //orientation = "Down";
+            }
+            else
+            {
+                pawnsColour = PieceState.Red;
+                //orientation = "Up";
+            }
+
             numberOfPawns = 12;
-            chooseColour(playerNumber);
             setOponent();
         }
 
 //||||||||||||||||||||||||||||||||||||||| CLASS METHODS ||||||||||||||||||||||||||||||||||||||||||||
 
-//*********PROBABLY NOT NEEDED 
-        protected void chooseColour(int number)
+        //oponent colour is needed for checking capture moves
+        protected void setOponent()
         {
-            if (number == 1)
+            if (pawnsColour == PieceState.Red)
             {
-                pawnsColour = PieceState.White;
-                orientation = "Down";
+                opponent = PieceState.White;
             }
             else
             {
-                pawnsColour = PieceState.Red;
-                orientation = "Up";
+                opponent = PieceState.Red;
             }
         }
 
-
-        //checking the board for the current player pawns
-        //counting them and assigining thos positions to player's dictionary
+        //checking if current player has any capture moves
+        public void  canCapture()
+        {
+            if (currentGame.getPossibleCaptureMoves.Count > 0)
+            {
+                //if there are any capture moves player must do them, therefore they are only legal moves
+                captureMovePossible = true;
+                legalMoves = currentGame.getPossibleCaptureMoves;
+            }
+            else
+            {
+                captureMovePossible = false;
+                legalMoves = currentGame.getLegalMoves;
+            }
+        }
 
         
-
-        //checking if given coordinates are valid to start the move
-        public void isValidCoordinateToUse()
+        private int getColumn(char coordinates)
         {
-            String fieldState;
+            int x;
             try
             {
-                //asking for coordinates and checking if this is current's player pawn to be moved
-                String coordinates = Console.ReadLine();
-
-                //fieldState = getCoordinatesToCheckState(coordinates);
-                //if (!fieldState.Equals(pawnsColour))
-                //{
-                //    Console.WriteLine("You can only move your pawns. Please choose again");
-                //    validStart = false;
-                //}
-                //validStart = true;
-                //if (!fieldState.Equals("Valid"))
-                //{
-                //    Console.WriteLine("You cannot move your pawn onto this field. Please choose again");
-                //    validDedstination = false;
-                //}
-                validDedstination = true;
+                x = coordinates % 8;
+                if (x == 0)
+                {
+                    x = 8;
+                }
             }
             catch (Exception)
             {
-                Console.WriteLine("Please enter valid coordinates");
+                x = -1;
             }
+            return x - 1;
         }
 
-
-        private int[] getCoordinatesToCheckState(String coordinates)
+        private int getRow(char coordinates)
         {
-            int column = getColumn(char.ToUpper(coordinates[0]));
-            int row = getRow(coordinates.Substring(1));
-            int[] temp = {column, row};
-            return temp;
-
+            int y;
+            try
+            {
+                y = Int32.Parse(coordinates.ToString());
+            }
+            catch (Exception)
+            {
+                y = -1;
+            }
+            return y - 1;
         }
 
+        //if player has any capture moves they must be performed
+        //therefore player must choose one of existing ones
+        public void showAndSelectCaptureMoves()
+        {
+            String startCoordinates;
+            String destinationCoordinates;
+            Console.WriteLine("You have folowing capture moves: ");
+            int i = 1;
+            foreach (int[] move in legalMoves)
+            {
+                startCoordinates = (char)(move[0] + 65) + (move[1] + 1).ToString();
+                destinationCoordinates = (char)(move[2]+65) + (move[3] + 1).ToString();
+                Console.WriteLine(i + ". From: " + startCoordinates + " To: " + destinationCoordinates);
+                i++;
+            }
+            int selectedMove = -1;
+            do
+            {
+                Console.Write("Please select one: >>>\t");
+                try
+                {
+                    selectedMove = Int32.Parse(Console.ReadLine());
+                }
+                catch (Exception)
+                {
+                    Console.Write("Please enter a number for a chosen move: \t");
 
+                }
+            } while (selectedMove == -1);
+            makeMove(legalMoves[selectedMove - 1]);
+        }
 
-
-        ////checking if both start and destination fields are correctly chosend and if the move can be performed
+        //checking if both start and destination fields are correctly chosend and if the move can be performed
         public Boolean makeValidMove()
         {
-            int[] playersMove = new int[4];
+            int[] playerMove = new int[6];
             //asking for valid coordinates until they're valid
 
             Console.Write("\nPlease enter coordinates of the pawn you want to move: >>>\t");
             String startCoordinates = Console.ReadLine();
-            try
+            if (startCoordinates.Length == 2)
             {
-                playersMove[0] = getCoordinatesToCheckState(startCoordinates)[0];
-                playersMove[1] = getCoordinatesToCheckState(startCoordinates)[1];
-                
+                try
+                {
+                    playerMove[0] = getColumn(char.ToUpper(startCoordinates[0]));
+                    playerMove[1] = getRow(startCoordinates[1]);
+                    //Console.WriteLine("Coordinates " + playerMove[0] + " and " + playerMove[1]);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Invalid start coordinates.");
+                    return false;
+                }
+                if (!(playerMove[0] >= 0 && playerMove[0] < 8)
+                    || !(playerMove[1] >= 0 && playerMove[1] < 8)
+                    || currentBoard.GridXY[playerMove[0], playerMove[1]].State == PieceState.Valid
+                    || currentBoard.GridXY[playerMove[0], playerMove[1]].State == PieceState.Invalid)
+                {
+                    Console.WriteLine("Invalid start coordinates.");
+                    return false;
+                }
             }
-            catch (Exception )
+            else
             {
                 Console.WriteLine("Invalid start coordinates.");
                 return false;
@@ -185,121 +223,89 @@ namespace Checkers_Game_Helper
 
             Console.Write("\nPlease enter destination coordinates >>>\t");
             String destinationCoordinates = Console.ReadLine();
-            try
+            if (destinationCoordinates.Length == 2)
             {
-                playersMove[2] = getCoordinatesToCheckState(destinationCoordinates)[0];
-                playersMove[3] = getCoordinatesToCheckState(destinationCoordinates)[1];
-                
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Invalid start coordinates.");
-                return false;
-            }
-            return true;
-
-        }
-
-
-
-        //checking if current player has any capture moves
-        public Boolean canCapture()
-        {
-            int letter;
-            int side;
-            string startCoordinates;
-            //string fieldState;
-            foreach (var pawn in PiecesOfThePlayer)
-            {
-                letter = (int)(pawn.XCoordinates) % 8;
-                side = pawn.YCoordinates;
-                //startCoordinates = pawn;
-                //for each pawn of current player check diagonal fields
-               // Console.WriteLine("Checking field " + startCoordinates);
-                //checkNeighbours(pawn.Value);
-                //getStatusOfFieldsAhead(letter, side, startCoordinates);
-
-            }
-
-
-
-
-            return false;
-        }
-
-        public void checkingFieldsAround(int letter, int row, string startCoordinates)
-        {
-            //strings to hold coordinates numbers
-            string leftTopField, rightTopField, leftBottomField, rightBottomField;
-            //strings to hold the state of thise fields
-            string neighbourFieldState, desitnationField = "";
-            try
-            {
-                //getting coordinates of diagonal fields
-                leftTopField = (char)(letter - 2) + (row - 2).ToString();
-                neighbourFieldState = (char)(letter - 1) + (row - 1).ToString();
-                //getting the states of those diagonal fields
-                //neighbourFieldState = currentBoard.PlayerPositions[neighbourFieldState].State.ToString();
-                //desitnationField = currentBoard.PlayerPositions[leftTopField].State.ToString();
-                //if the neighbour is oponent and next field is valid, then we have a capture move
-                if (neighbourFieldState.Equals(oponent) && leftTopField.Equals("Valid"))
+                try
                 {
-                    String[] validMove = { startCoordinates, desitnationField };
-
-                    //captureMoves.Add(validMove);
+                    playerMove[2] = getColumn(char.ToUpper(destinationCoordinates[0]));
+                    playerMove[3] = getRow(destinationCoordinates[1]);
+                    //Console.WriteLine("Coordinates " + playerMove[2] + " and " + playerMove[3]);
                 }
-            }
-            catch (Exception)
-            {
-                
-            }
-        }
-
-
-
-        private void setOponent()
-        {
-            if (pawnsColour == PieceState.Red)
-            {
-                oponent = "Red";
+                catch (Exception)
+                {
+                    Console.WriteLine("Invalid destination coordinates.");
+                    return false;
+                }
+                if (!(playerMove[2] >= 0 && playerMove[2] < 8)
+                    || !(playerMove[3] >= 0 && playerMove[3] < 8)
+                    || currentBoard.GridXY[playerMove[2], playerMove[3]].State != PieceState.Valid)
+                {
+                    Console.WriteLine("Invalid destination coordinates.");
+                    return false;
+                }
             }
             else
             {
-                oponent = "White";
+                Console.WriteLine("Invalid destination coordinates.");
+                return false;
             }
+            playerMove[4] = 0;
+            playerMove[5] = 0;
+            return makeMove(playerMove);
         }
-
-
-        private int getColumn(char coordinates)
-        {
-            int column;
-            try
-            {
-                column = Int32.Parse(coordinates.ToString());
-            }
-            catch (Exception)
-            {
-                column = -1;
-            }
-            return column;
-        }
-
-        private int getRow(string coordinates)
-        {
-            int row;
-            try
-            {
-                row = Int32.Parse(coordinates);
-            }
-            catch (Exception)
-            {
-                row = -1;
-            }
-            return row;
-        }
-
         
+        //making actual move by comparing selected coordinates with the valid moves
+        private Boolean makeMove(int[] playerMove)
+        {
+            foreach (int[] validMove in legalMoves)
+            {
+                if (playerMove.SequenceEqual(validMove))
+                {
+                    changeFieldsOnBoardAfterMove(validMove);
+                    return true;
+                }
 
-       
+            }
+            Console.WriteLine("The move you tried to make was invalid." +
+                              "\nPlease remember you can move only 1 field diagonal if it is empty or 2 fields if you plan to capture opponent's piece." +
+                              "\nPlease enter both coordinates again.");
+            return false;
+        }
+
+        //change the statuses of the fields involved in the move
+        protected void changeFieldsOnBoardAfterMove(int[] selectedMove)
+        {
+            bool isKing = currentBoard.GridXY[selectedMove[0], selectedMove[1]].IsKing;
+
+            currentBoard.GridXY[selectedMove[0], selectedMove[1]].State = PieceState.Valid;
+            currentBoard.GridXY[selectedMove[0], selectedMove[1]].IsKing = false;
+            //if it is a capture move, then we have to remove opponent's piece
+            if (CaptureMovePossible)
+            {
+                currentBoard.GridXY[selectedMove[4], selectedMove[5]].State = PieceState.Valid;
+                currentBoard.GridXY[selectedMove[4], selectedMove[5]].IsKing = false;
+            }
+            //check if destination field will make this piece a King
+            if (pawnsColour == PieceState.White && selectedMove[3] == 7)
+            {
+                currentBoard.GridXY[selectedMove[2], selectedMove[3]].State = PieceState.White;
+                currentBoard.GridXY[selectedMove[2], selectedMove[3]].IsKing = true;
+            }
+            else if (pawnsColour == PieceState.Red && selectedMove[3] == 0)
+            {
+                currentBoard.GridXY[selectedMove[2], selectedMove[3]].State = PieceState.Red;
+                currentBoard.GridXY[selectedMove[2], selectedMove[3]].IsKing = true;
+            }
+            else
+            {
+                if (isKing)
+                {
+                    currentBoard.GridXY[selectedMove[2], selectedMove[3]].IsKing = true;
+
+                }
+                    currentBoard.GridXY[selectedMove[2], selectedMove[3]].State = PawnsColour;
+            }
+            
+        }
     }
 }

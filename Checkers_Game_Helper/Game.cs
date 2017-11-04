@@ -13,30 +13,45 @@ namespace Checkers_Game_Helper
     *   This is the main class for the game that will use all related classes to organize whole game and provide all required features.
     *
     ** Future updates:
+    *   Checking the state of the field method should be moved to the Board class
     *   
     ** Design Patterns Used:
     *   This class is a Singleton. The reason for this is that we want to have only one active game at the time.
     *   Another reason is that all related classess need to access some of the game data and it has to be the same for all
+    *   
+    *   This class also uses Memento pattern to store the game history and utilize Undo/Redo feature. 
+    *   GameHistory class is the caretaker in memento pattern which stores the history of all moves and allows access to them
+    *   Move is the originator that creates the mementos and stores them in the History
     *
-    ** Last Update: 28/10/2017
+    ** Last Update: 04/11/2017
     */
 
-
-
-        //Singleton
+    //Singleton Class
     public class Game
     {
 
 //-------------- Instance Fields ------------------------------------------------------------------------
+        //variables for the status of the game
         private GameType gameType;
         private static Game currentGame_Instance;
-        private List<Player> players = new List<Player>();
         private Board gameBoard;
-        private String playerName;
+        //memento pattern variables
+        private GameHistory_Caretaker gameHistory;
+        private Move_Originator move;
+        private int currentMoveNumber = -1;
+        private int savedFiles = -1;
+        private Boolean undoEnabled;
+        private Boolean redoEnabled;
+
+        //details of the players
+        private Dictionary<String, Player> players = new Dictionary<String, Player>();
         private Boolean winner;
         private String nameOfTheWinner;
-        private int turn;
-        private int movingPlayer = 1;
+        private String turnColour;
+        private int turnNum;
+
+
+        //lists of available moves for each turnColour
         private List<int[]> possibleCaptureMoves = new List<int[]>();
         private List<int[]> legalMoves = new List<int[]>();
 
@@ -53,30 +68,59 @@ namespace Checkers_Game_Helper
                 return currentGame_Instance;
             }
         }
-
         public List<int[]> getLegalMoves => legalMoves;
+        public List<int[]> getPossibleCaptureMoves => possibleCaptureMoves;
+        public GameHistory_Caretaker GameHistory => gameHistory;
+
 
 //-------------- Class Constructor ------------------------------------------------------------------------
         private Game()
         {
-            
+            gameHistory = GameHistory_Caretaker.GameHistory;
+            move = new Move_Originator();
+            undoEnabled = false;
+            redoEnabled = false;
         }
 
 
 //|||||||||||||||||||||||||||||||||| CLASS METHODS |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-            
         //reset players and their state to default
+        //used at the begining of the game
         public void setGame(string gameType)
         {
-            
             gameBoard = Board.CurrentBoardInstance;
-            //gameBoard.resetBoardPositions();
             this.gameType = (GameType)Enum.Parse(typeof(GameType), gameType);
-            //players = new Player[2];
             chooseGameType();
-            turn = 1;
+
+            //on the start of the game this will change to White
+            turnColour = "Red";
+            turnNum = 1;
             winner = false;
+
+            //saving the state of the game is for replay option
+            saveMoveToGameHistory();
+
+
+            //ask if user wants to use Undo feature
+            Console.WriteLine("_____________________________________________________________________________________________");
+            Console.WriteLine("Do you want to turn on Undo feature that would allow you to roll back the whole turn?");
+            Console.Write("1 for yes, any other key for playing normal. >>> \t");
+            int choice = -1;
+            try
+            {
+                choice = Int32.Parse(Console.ReadLine());
+            }
+            catch (Exception)
+            {
+            }
+            if (choice == 1)
+            {
+                undoEnabled = true;
+                Console.WriteLine("Undo enabled!");
+                Console.WriteLine("____________________________________________________________________________________________");
+            }
+            System.Threading.Thread.Sleep(1000);
         }
         
         //choosing the type of the game to play based on selection from menu
@@ -85,88 +129,67 @@ namespace Checkers_Game_Helper
             //choosing game type depending on the game chosen in menu
             switch (gameType)
             {
-//***************CHANGE TO USE LIST**
                 case GameType.Player_VS_CPU:
                 {
-                    Console.Write("Player 1 please enter your name: >>> \t");
-                    players.Add(setPlayerName(1));
-                    players.Add(new AI_Player());
+                    Player p1 = setPlayerDetails();
+                    String colour = p1.PawnsColour.ToString();
+                    players[colour] = p1;
+                    if (colour == "White")
+                    {
+                        players["Red"] = (new AI_Player("Red"));
+                    }
+                    else
+                    {
+                        players["White"] = (new AI_Player("White"));
+                    }
+                    
                     break;
                 }
                 case GameType.Player_VS_Player:
                 {
                     Console.Write("Player 1 please enter your name: >>> \t");
-                    players.Add(setPlayerName(1));
+                    //players.Add(setPlayerDetails());
                     Console.Write("Player 2 please enter your name: >>> \t");
-                    players.Add(setPlayerName(2));
+                    //players.Add(setPlayerDetails());
 
-                    break;
-                }
-                case GameType.CPU_VS_Player:
-                {
-//***************CHANGE TO USE LIST**
-
-                        players[0] = new AI_Player();
-                    Console.Write("Player 2 please enter your name: >>> \t");
-                    players[1] = setPlayerName(2);
                     break;
                 }
                 case GameType.CPU_VS_CPU:
                 {
-//***************CHANGE TO USE LIST*****
 
-                        players[0] = new AI_Player();
-                    players[1] = new AI_Player();
+                    players["White"] = new AI_Player("White");
+                    players["Red"] = new AI_Player("Red");
                     break;
                 }
             }
-//************* MAKE PROPER USE OF THIS
-            //players[0].IsMovingNow = true;
         }
-        
-        //main method for playing the game 
-        public void PlayGame()
+
+        //getting details for creating new player
+        private Player setPlayerDetails()
         {
+            Console.Write("Please enter your name: >>> \t");
+            String playerName = Console.ReadLine();
 
-////LINIA TESTOWA---------------------------------------------------
-Console.WriteLine("\n\nYou are in game " + gameType);
-Console.WriteLine();
-
-            //making move until one of the players wins
-            do
+            Console.WriteLine("Please choose your colour. 1 for White, 2 for Red");
+            int colour = -1;
+            try
             {
-                int playerMoving = 0;
-                //Players are moving moves
-                for (int i = 0; i < 2; i++)
-                {
-                    gameBoard.drawNames(players[0], players[1], turn);
-                   // Console.WriteLine("Player 1 colour is " + players[0].PawnsColour + "\tPlayer 2 colour is " + players[1].PawnsColour);
-                    gameBoard.drawBoard();
-                    setPlayerPositions(players[playerMoving]);
-                    findLegalMoves(players[playerMoving]);
-                    playerMove(players[playerMoving]);
-                    legalMoves.Clear();
-                    //Need to check if player won at this point
-                    if (checkIfWinner(players[playerMoving]))
-                    {
-                        break;
-                    }
-                    
-                    playerMoving++;
-                }
+               colour = Int32.Parse(Console.ReadLine());
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Wrong number. Your colour is white");
+            }
 
-                //end of turn
-                turn++;
-            } while (!winner);
-
-
-        }
-
- 
-        //obtaining players names and returning objects
-        private Player setPlayerName(int playerNumber)
-        {
-            playerName = Console.ReadLine();
+            String playerColour;
+            if (colour == 1)
+            {
+                playerColour = "White";
+            }
+            else
+            {
+                playerColour = "Red";
+            }
             try
             {
                 playerName = char.ToUpper(playerName[0]) + playerName.Substring(1);
@@ -175,161 +198,419 @@ Console.WriteLine();
             {
                 Console.WriteLine(e);
             }
-            Player temp = new Player(playerName, playerNumber);
-            return temp;
+            return new Player(playerName, playerColour);
         }
 
-        public void setPlayerPositions(Player currentPlayer)
+
+        //getting all player's pieces into one list for every turnColour
+        //this will be used to check the valid moves as we only do that for currently moving player
+        public void setPlayerPositions(Player currentlyMovingPlayer)
         {
-            currentPlayer.PiecesOfThePlayer.Clear();
-            foreach (var position in gameBoard.GridYX)
+            //first clear the current list
+            currentlyMovingPlayer.PiecesOfThePlayer.Clear();
+            foreach (var position in gameBoard.GridXY)
             {
-                if (position.State  == currentPlayer.PawnsColour)
+                if (position.State  == currentlyMovingPlayer.PawnsColour || (position.IsKing && currentlyMovingPlayer.PawnsColour == position.State))
                 {
-                    currentPlayer.PiecesOfThePlayer.Add(position);
+                    currentlyMovingPlayer.PiecesOfThePlayer.Add(position);
                 }
             }
-            currentPlayer.NumberOfPawns = currentPlayer.PiecesOfThePlayer.Count;
+            //count the total of the pawns
+            currentlyMovingPlayer.NumberOfPawns = currentlyMovingPlayer.PiecesOfThePlayer.Count;
         }
 
         //checking if any player has won
-        private bool checkIfWinner(Player currentPlayer)
+        private bool checkIfWinner(Player currentlyMovingPlayer)
         {
             //checking each player for number of pawns
-            foreach (var player in players)
+            if (currentlyMovingPlayer.NumberOfPawns <= 0)
             {
-                //if player lost all pawns then the oponent won
-                 if (player.NumberOfPawns == 0)
-                 {
-                        player.HasWon = false;
-                        winner = true;
-                    //if currently moving player is not the one who lost all pawns then it is a winner
-                    if (!currentPlayer.Equals(player) && currentPlayer.NumberOfPawns > 0)
-                     {
-                        currentPlayer.HasWon = true;
-                         nameOfTheWinner = currentPlayer.Name;
-                     }
-                     return true;
-                 }
+                currentlyMovingPlayer.HasWon = false;
+                winner = true;
+                players[currentlyMovingPlayer.GetOpponent.ToString()].HasWon = true;
+                nameOfTheWinner = players[currentlyMovingPlayer.GetOpponent.ToString()].Name;
+                return true;
             }
             return false;
         }
 
-        //procedure for a move of a player
-        private void playerMove(Player currentPlayer)
+        //main method for playing the game 
+        public void PlayGame()
         {
-            //first check if current player can capture
-            //currentPlayer.canCapture();
-            bool validStart;
-            bool validDestination;
-
-            
-            Console.WriteLine("\n");
-
-            //first checking who's moving 
-            if (movingPlayer%2 != 0)
+            Console.WriteLine("\n\n");
+            //making move until one of the players wins
+            do
             {
-                Console.Write("\nPlayer 1: " + players[0].Name + " is moving.");
-            }
-            else
-            {
-                Console.Write("\nPlayer 2: " + players[1].Name + " is moving.");
-            }
-
-                //checking if it's computer
-                if (currentPlayer.GetType() == typeof(AI_Player))
+                if (turnColour.Equals("Red"))
                 {
-                    Console.WriteLine("\nComputer is moving");
-                    //making a new reference variable to access AI Player methods
-                    AI_Player aiPlayer = (AI_Player) currentPlayer;
-                //checking if computer can make any move at all
-                    if (aiPlayer.canCapture())
-                    {
-
-                    }
-                    else
-                    {
-                        //aiPlayer.checkIfMoveIsPossible();
-                        aiPlayer.makeRandomMove();
-                    }
+                    turnColour = "White";
                 }
-                //if it's human asking what moves to make
                 else
                 {
-                    bool validMove;
-                    //if both coordinates are valid, player can move
+                    turnColour = "Red";
+                }
+
+                //better reference variable for cleaner code
+                Player currentlyMovingPlayer = players[turnColour];
+                
+                //get all pieces of current player and check them all for legal moves
+                setPlayerPositions(currentlyMovingPlayer);
+
+                //Need to check if player won at this point
+                //If the last turn resulted in 0 pawns for any of the players than the oponent won
+                if (checkIfWinner(currentlyMovingPlayer))
+                {
+                    System.Threading.Thread.Sleep(1000);
+
+                    Console.WriteLine("\n\n");
+                    Console.WriteLine("|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
+                    Console.WriteLine("||||||||||||||| CONGRATULATIONS " + nameOfTheWinner + " HAS WON!!!!!!!!! ||||||||||||||||||||||");
+                    Console.WriteLine("|||||||||||||||                                                          ||||||||||||||||||||||");
+                    Console.WriteLine("|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n");
+                    System.Threading.Thread.Sleep(1000);
+
+                    break;
+                }
+
+                //checking if there are any legal moves
+                findLegalMoves(currentlyMovingPlayer);
+                    
+                //drawing the board
+                gameBoard.drawNames(players["White"], players["Red"], turnColour, turnNum);
+                gameBoard.drawBoard();
+                    
+                //ask player to move
+                playerMove(currentlyMovingPlayer);
+                    
+                //saving current move to originator and adding to the list of mementos in Caretaker
+                saveMoveToGameHistory();
+
+                //chosing undo is available only to human players
+                if (undoEnabled && currentlyMovingPlayer.GetType() == typeof(Player))
+                {
+                    bool moveCompleted;
                     do
                     {
-                        validMove = currentPlayer.makeValidMove();
-                    } while (!validMove);
+                        moveCompleted = undoRedoTurn();
+                    } while (!moveCompleted);
                 }
-                
-                movingPlayer++;
+
+                turnNum++;
+                System.Threading.Thread.Sleep(1000);
+
+            } while (!winner);
         }
 
+        //procedure for a move of a player
+        private void playerMove(Player currentlyMovingPlayer)
+        {
+            //first check if current player can capture
+            currentlyMovingPlayer.canCapture();
 
-        private void findLegalMoves(Player currentPlayer)
+
+            //checking if it's computer
+            if (currentlyMovingPlayer.GetType() == typeof(AI_Player))
+            {
+                Console.WriteLine("\nComputer is moving");
+                //making a new reference variable to access AI Player methods
+                AI_Player aiPlayer = (AI_Player) currentlyMovingPlayer;
+               
+                //making a move for a computer means selecting a random available move
+                //if this is a capture move the list of legal moves will contain only those
+                aiPlayer.makeRandomMove();
+            }
+            //if it's human asking what moves to make
+            else
+            {
+                if (currentlyMovingPlayer.CaptureMovePossible)
+                {
+                    //if human player can capture we want to ask which capture move to choose
+                      currentlyMovingPlayer.showAndSelectCaptureMoves();
+                }
+                else
+                {
+                    //if no capture moves we ask for coordinates
+                    bool validMove;
+                        //if both coordinates are valid, player can move
+                        do
+                        {
+                            validMove = currentlyMovingPlayer.makeValidMove();
+                        } while (!validMove);
+                }
+            }
+            possibleCaptureMoves.Clear();
+            legalMoves.Clear();
+        }
+
+        //checking all current player's pawns for any possible moves
+        private void findLegalMoves(Player currentlyMovingPlayer)
         {
             int x;
             int y;
-            PieceState startFieldState;
-            PieceState destinationFieldState;
-            foreach (PiecePosition piece in currentPlayer.PiecesOfThePlayer)
+            //coordinates for valid move
+            int[] moveCoordinates = new int[6];
+
+            
+            //checking each piece of currently moving player
+            foreach (PiecePosition piece in currentlyMovingPlayer.PiecesOfThePlayer)
             {
+                //states of fields needed for deciding if this is a valid move
+                PieceState startField;
+                PieceState destinationField;
+                PieceState landingField;
                 x = piece.XCoordinates;
                 y = piece.YCoordinates;
-                startFieldState = checkFieldState(y, x );
+                startField = checkFieldState(x, y);
+//Console.WriteLine("\nChecking coordinates " + (char)(x + 65)+(y + 1) + ", colour is " + startField);
                 
                 //check if starting field is players field
-                if (startFieldState == currentPlayer.PawnsColour)
+                if (startField == currentlyMovingPlayer.PawnsColour || piece.IsKing)
                 {
+                    //If current piece is a King it should check all the fields around it
+                    //otherwise just one side depending on the player's orientation
                     //checking the orientation of the player
                     //if goes down
-                    if (currentPlayer.PawnsColour == PieceState.White)
+                    if (currentlyMovingPlayer.PawnsColour == PieceState.White || piece.IsKing)
                     {
-                        destinationFieldState = checkFieldState(y + 1, x - 1);
-                        if (destinationFieldState == PieceState.Valid)
+                        //checking LEFT DIAGONAL
+                        destinationField = checkFieldState(x - 1, y + 1);
+//Console.WriteLine("Left Diagonal down: Destination " + (char)(x - 1 + 65) + (y + 2) + ", field state: " + destinationField);
+                        //if it's empty it's a valid move
+                        if (destinationField == PieceState.Valid)
                         {
-                            int[] coordinates = { y, x, y + 1, x - 1};
-                            legalMoves.Add(coordinates);
+                            moveCoordinates = new [] { x, y, x - 1 , y + 1, 0, 0};
+                            legalMoves.Add(moveCoordinates);
                         }
-                        destinationFieldState = checkFieldState(y + 1, x + 1);
-                        if (destinationFieldState == PieceState.Valid)
+                        //if it's opponent's colour we check if capturing is possible
+                        else if (destinationField == currentlyMovingPlayer.GetOpponent)
                         {
-                            int[] coordinates = { y, x, y + 1, x + 1 };
-                            legalMoves.Add(coordinates);
+                            landingField = checkFieldState( x - 2, y + 2);
+                            //if landing field is free this is a valid move and valid capture move
+                            if (landingField == PieceState.Valid)
+                            {
+//Console.WriteLine("Oponent is aside. Destination " + (char)(x - 2 + 65) + (y + 3) + ", field state: " + destinationField);
+                                //last 2 coordinates added are fot
+                                moveCoordinates = new [] { x, y, x - 2, y + 2, x - 1, y + 1};
+                                possibleCaptureMoves.Add(moveCoordinates);
+//Console.WriteLine("Added to capture moves");
+                            }
+                        }
+
+
+                        //then we check RIGHT DIAGONAL
+                        destinationField = checkFieldState(x + 1, y + 1);
+//Console.WriteLine("Right diagonal down: Destination " + (char)(x + 1 + 65) + (y + 2) + ", field state: " + destinationField);
+                        if (destinationField == PieceState.Valid)
+                        {
+                            moveCoordinates = new[] { x, y, x + 1, y + 1, 0, 0 };
+                            legalMoves.Add(moveCoordinates);
+                        }
+                        //if it's opponent field we check if there is a capture move
+                        else if (destinationField == currentlyMovingPlayer.GetOpponent)
+                        {
+                            landingField = checkFieldState(x + 2, y + 2);
+                            //if field is empty then it's a valid move and valid capture move
+                            if (landingField == PieceState.Valid)
+                            {
+//Console.WriteLine("Oponent is aside. Destination " + (char)(x + 2 + 65) + (y + 3) + ", field state: " + destinationField);
+                                moveCoordinates = new[] { x, y, x + 2, y + 2, x + 1, y + 1 };
+                                possibleCaptureMoves.Add(moveCoordinates);
+//Console.WriteLine("Added to capture moves");
+                            }
                         }
                     }
                     //if goes up
-                    else
+                    if (currentlyMovingPlayer.PawnsColour == PieceState.Red || piece.IsKing)
                     {
-                        destinationFieldState = checkFieldState(y - 1, x - 1);
-                        if (destinationFieldState == PieceState.Valid)
+                        //LEFT DIAGONAL
+                        destinationField = checkFieldState(x - 1, y - 1);
+//Console.WriteLine("Left Diagonal up: Destination " + (char)(x - 1 + 65) + (y) + ", field state: " + destinationField);
+                        if (destinationField == PieceState.Valid)
                         {
-                            int[] coordinates = { y, x, y - 1, x - 1 };
-                            legalMoves.Add(coordinates);
+                            moveCoordinates = new[] { x, y , x - 1, y - 1, 0, 0 };
+                            legalMoves.Add(moveCoordinates);
                         }
-                        destinationFieldState = checkFieldState(y - 1, x + 1);
-                        if (destinationFieldState == PieceState.Valid)
+                        else if (destinationField == currentlyMovingPlayer.GetOpponent)
                         {
-                            int[] coordinates = { y, x, y - 1, x + 1 };
-                            legalMoves.Add(coordinates);
+                            landingField = checkFieldState(x - 2, y - 2);
+//Console.WriteLine("Oponent is aside. Destination " + (char)(x - 2 + 65) + (y - 1) + ", field state: " + destinationField);
+                            if (landingField == PieceState.Valid)
+                            {
+                                moveCoordinates = new[] { x, y, x - 2, y - 2, x - 1, y - 1 };
+                                possibleCaptureMoves.Add(moveCoordinates);
+//Console.WriteLine("Added to capture moves");
+                            }
+                        }
+                        //RIGHT DIAGONAL
+                        destinationField = checkFieldState(x + 1, y - 1);
+//Console.WriteLine("Right Diagonal up: Destination " + (char)(x + 1 + 65) + (y) + ", field state: " + destinationField);
+                        if (destinationField == PieceState.Valid)
+                        {
+                            moveCoordinates = new[] { x, y, x + 1, y - 1, 0, 0};
+                            legalMoves.Add(moveCoordinates);
+                        }
+                        else if (destinationField == currentlyMovingPlayer.GetOpponent)
+                        {
+                            landingField = checkFieldState(x + 2, y - 2);
+//Console.WriteLine("Oponent is aside. Destination " + (char)(x + 2 + 65) + (y - 1) + ", field state: " + destinationField);
+                            if (landingField == PieceState.Valid)
+                            {
+                                moveCoordinates = new[] { x, y, x + 2, y - 2 , x + 1, y - 1};
+                                possibleCaptureMoves.Add(moveCoordinates);
+//Console.WriteLine("Added to capture moves");
+                            }
                         }
                     }
+//Console.ReadKey();
                 }
             }
         }
 
-        public PieceState checkFieldState(int y, int x)
+        //checking the state of the requested field on the board
+        public PieceState checkFieldState(int x, int y)
         {
             //arrays are numbered from 0, therefore we need one less of each coordinate
-            y--;
-            x--;
             if (x >= 0 && x < 8 && y >= 0 && y < 8)
             {
-                return gameBoard.GridYX[y, x].State;
+                return gameBoard.GridXY[x,y].State;
             }
+            //if the coordinates given don't lie within the board we return invalid as that's actually correct
             return PieceState.Invalid;
+        }
+
+
+        private void saveMoveToGameHistory()
+        {
+            move.saveCurrentMove(gameBoard.GridXY);
+            GameHistory.addPiecesPositionsToHistory(move.createBoardStateMemento());
+            savedFiles++;
+            currentMoveNumber++;
+        }
+
+        private Boolean undoRedoTurn()
+        {
+            //allowing to undo only if there are any moves previously made
+            
+                
+                int endOfMoveChoice = -1;
+                do
+                {
+                    //asking player to complete the move or to undo
+                    Console.WriteLine("Do you want to complete the move(enter 1), undo (enter 2) or redo (enter 3) ?");
+                    try
+                    {
+                        string choice = Console.ReadLine();
+                        endOfMoveChoice = Int32.Parse(choice);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Please enter 1 or 2");
+
+                    }
+                } while (endOfMoveChoice < 1 || endOfMoveChoice > 3);
+
+                //if player chooses to undo the move then we get the previous version of the board and ask player to move again
+                if (endOfMoveChoice == 1)
+                {
+                    //if player choses to complete move we disable redo
+                    redoEnabled = false;
+                    //this method removes any newer moves existing in the history as they aren't needed anymore
+                    gameHistory.deleteNewerHistoryAfterUndoRedo(currentMoveNumber + 1);
+                    return true;
+                }
+                if (endOfMoveChoice == 2)
+                {
+                    undoMove();
+                }
+                if (endOfMoveChoice == 3)
+                {
+                    if (redoEnabled)
+                    {
+                        redoMove();
+                    }
+                    else
+                    {
+                        Console.WriteLine("There are no more moves to redo.");
+                    }
+                }
+            return false;
+        }
+
+        private Boolean undoMove()
+        {
+            //undo is possible only if there is at least one move in the history
+            if (currentMoveNumber >= 1)
+            {
+                //TEST
+                Console.WriteLine("You have undone last move.");
+                //Console.WriteLine("Board after your last move");
+                //gameBoard.drawBoard();
+               // Console.ReadKey();
+
+                //turn goes down as the move is undone
+                turnNum--;
+                //as undo was chosen the current move is a previous one now
+                currentMoveNumber--;
+
+                //restoring the state of the board at given point
+                gameBoard.GridXY =
+                    move.restoreMoveFromHistory(GameHistory.getPiecePositionsHistory(currentMoveNumber));
+
+                //TEST
+                //Drawing test board
+                //Console.WriteLine("Drawing test board after undo");
+                //Console.WriteLine(
+                //    "_________________________________________________________________________________________\n");
+
+                //redo becomes enabled as the move was undone
+                redoEnabled = true;
+
+                //TEST
+                //gameBoard.drawBoard();
+                //Console.ReadKey();
+            }
+            else
+            {
+                Console.WriteLine("There are no more moves to undo");
+                return false;
+            }
+            return true;
+        }
+
+        private Boolean redoMove()
+        {
+            //redo can be chosen only if the selected move is one less than saved ones
+            //this means there is at least one new version
+            if (savedFiles - 1 > currentMoveNumber)
+            {
+                //TEST
+                Console.WriteLine("You have redone last move.");
+                //Console.WriteLine("Board after your last move");
+                //gameBoard.drawBoard();
+                //Console.ReadKey();
+                
+                
+                //Increment the current move as we redo the previously undone move
+                currentMoveNumber++;
+                turnNum++;
+                //restoring the state of the board with the next move in the history
+                gameBoard.GridXY = move.restoreMoveFromHistory(gameHistory.getPiecePositionsHistory(currentMoveNumber));
+
+                //TEST
+                //Drawing test board
+                //Console.WriteLine("Drawing test board after undo");
+                //Console.WriteLine("_________________________________________________________________________________________\n");
+                //gameBoard.drawBoard();
+                //Console.ReadKey();
+            }
+            //if there are no more newer moves in the history it means redo is not possible
+            else
+            {
+                Console.WriteLine("There are no more moves to redo.");
+                redoEnabled = false;
+                return false;
+            }
+            return true;
         }
     }
 
