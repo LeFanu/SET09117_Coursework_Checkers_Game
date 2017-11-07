@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 using Checkers_Console_v1;
@@ -19,15 +21,11 @@ namespace Checkers_Console_v1
         *   This is the main class for the whole game. This is the base and the starting point of the game. 
         *   It will contain all the menus and will provide the initial interaction. 
         *
-        ** Future updates:
-        *   
-        ** Design Patterns Used:
         *
-        ** Last Update: 16/10/2017
+        ** Last Update: 07/11/2017
         */
 
         private static List<GameHistory_Caretaker> savedGames;
-
 
         static void Main(string[] args)
         {
@@ -38,23 +36,19 @@ namespace Checkers_Console_v1
             Console.WriteLine("**                                                    **");
             Console.WriteLine("********************************************************");
 
+            savedGames = new List<GameHistory_Caretaker>();
 
-            //mainMenu();
-            Game testingBoard = Game.CurrentGameInstance;
-            testingBoard.setGame("3");
-            testingBoard.PlayGame();
-            saveLastPlayedGame(testingBoard.GameHistory);
-            
-            Console.ReadKey();
+            mainMenu();
         }
 
         private static void mainMenu()
         {
+            Game chosenGame;
             int option;
             do
             {
                 Console.WriteLine("--------------------------------------------------------");
-                Console.WriteLine("Please choose one of the following options:");
+                Console.WriteLine("\nPlease choose one of the following options:");
                 Console.WriteLine("\t 1.Start New Game");
                 Console.WriteLine("\t 2.Replay Game");
                 Console.WriteLine("\t 3.Quit");
@@ -68,16 +62,15 @@ namespace Checkers_Console_v1
                         {
                             Console.WriteLine("\nStarting New Game...");
                             int gameOption;
-                            Game chosenGame;
 
                             do
                             {
                                 Console.WriteLine("\n--------------------------------------------------------");
-                                Console.WriteLine("Please choose one of the following options:");
+                                Console.WriteLine("\nPlease choose one of the following options:");
                                 Console.WriteLine("\t 1.Player VS Computer");
                                 Console.WriteLine("\t 2.Player VS Player");
                                 Console.WriteLine("\t 3.Computer VS Computer");
-                                Console.WriteLine("\t 4. Return to previous menu");
+                                Console.WriteLine("\t 4.Return to previous menu");
 
                                 Console.Write("Please enter your choice >>> \t");
                                 gameOption = Int32.Parse(Console.ReadLine());
@@ -88,18 +81,22 @@ namespace Checkers_Console_v1
                                     case 1:
                                     case 2:
                                     case 3:
-                                    case 4:
                                     {
+                                        Console.WriteLine("\n\n-----------------------------------------------------------------------------");
+                                            Console.WriteLine("                   Starting New Game!                        ");
+                                        Console.WriteLine("-----------------------------------------------------------------------------");
+
+                                        //clearing saved games until saving to file will not be implemented
+                                        savedGames.Clear();
                                         chosenGame = Game.CurrentGameInstance;
                                         chosenGame.setGame(gameOption.ToString());
                                         chosenGame.PlayGame();
                                         saveLastPlayedGame(chosenGame.GameHistory);
+                                        gameOption = 4;
                                         break;
                                     }
-
-                                    case 5:
+                                    case 4:
                                     {
-
                                         break;
                                     }
                                     default:
@@ -113,13 +110,61 @@ namespace Checkers_Console_v1
                         }
                     case 2:
                     {
-                        //savedGames =  loadSavedGames();
-                        foreach (GameHistory_Caretaker savedGame in savedGames)
+                        if (savedGames.Count > 0 )
                         {
-                            
+                            Board boardToDisplay = Board.CurrentBoardInstance;
+                            PiecePosition[,] moveToDisplay;
+                            foreach (GameHistory_Caretaker gameToReplay in savedGames)
+                            {
+                                Console.WriteLine();
+                                Console.WriteLine("__________________________________________________________________________________________");
+                                Console.WriteLine("Replay of stored game:");
+                                //this variable stores the number of moves
+                                int gameLength = gameToReplay.getHistoryLength();
+
+                                //Starting from 1 omits the initial state of the board needed for undo feature
+                                for (int i = 1; i < gameLength; i++)
+                                {
+                                    Console.WriteLine("\n\n************************************************************************************************");
+                                    Console.WriteLine(gameToReplay.getPiecePositionsHistory(i).getPlayerDetails);
+                                    Console.WriteLine();
+
+                                    moveToDisplay = gameToReplay.getPiecePositionsHistory(i).getPiecesPositions;
+                                    boardToDisplay.drawBoard(moveToDisplay);
+
+                                    Console.WriteLine();
+                                    Console.WriteLine("\n************************************************************************************************");
+
+                                    if (i + 1 < gameLength)
+                                    {
+                                        Console.Write("Next move in ");
+                                        for (int n = 3; n > 0; n--)
+                                        {
+                                            Console.Write(n + "... ");
+                                            System.Threading.Thread.Sleep(800);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("The last move in the game!");
+                                        System.Threading.Thread.Sleep(1000);
+                                    }
+                                }
+                                Console.WriteLine();
+                                Console.WriteLine("__________________________________________________________________________________________");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("\nThere are no saved games. Please play a game first and save it at the end to be able to replay that.\n");
+                            Console.WriteLine("__________________________________________________________________________________________");
                         }
                         break;
-                        }
+                    }
+                    case 3:
+                    {
+                        break;
+                    }
                     default:
                         {
                             Console.WriteLine("Please choose one of the given options.");
@@ -133,7 +178,7 @@ namespace Checkers_Console_v1
         private static void saveLastPlayedGame(GameHistory_Caretaker gameHistory)
         {
             Console.WriteLine("\n___________________________________________________________________________________________________________\n");
-            Console.WriteLine("Do you want to save the game you just played to replay this later?");
+            Console.WriteLine("Do you want to save (enter 1) the game you just played to replay this later?");
             string choice;
             int option = - 1;
 
@@ -153,6 +198,7 @@ namespace Checkers_Console_v1
                 try
                 {
                     savedGames.Add(gameHistory);
+                    Console.WriteLine("Your game was successfully saved!\n");
                 }
                 catch (Exception)
                 {
@@ -160,13 +206,5 @@ namespace Checkers_Console_v1
                 }
             }
         }
-
-        //private static List<GameHistory_Caretaker> loadSavedGames()
-        //{
-        //    //read from a file
-
-        //    //add saved games to the list
-
-        //}
     }
 }

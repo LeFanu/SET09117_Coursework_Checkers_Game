@@ -14,7 +14,7 @@ namespace Checkers_Game_Helper
     *   Memento is the main part of Memento pattern. It is the state of the object we want to save and store in a list.
     *   Memento allows to create an object of various variables and/or object we want to store
     *
-    ** Last Update: 04/11/2017
+    ** Last Update: 07/11/2017
     */
 
 
@@ -22,13 +22,17 @@ namespace Checkers_Game_Helper
     {
         //state of the board with all states of the positions
         private PiecePosition[,] piecesPositions;
+        private String playerDetails;
 
         //constructor
-        public BoardState_Memento(PiecePosition[,] piecesPositions)
+        public BoardState_Memento(PiecePosition[,] piecesPositions, String playerDetails)
         {
             this.piecesPositions = piecesPositions;
+            this.playerDetails = playerDetails;
         }
 
         public PiecePosition[,] getPiecesPositions => piecesPositions;
+
+        public string getPlayerDetails => playerDetails;
     }
 }

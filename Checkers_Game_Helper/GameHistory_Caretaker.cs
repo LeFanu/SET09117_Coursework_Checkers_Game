@@ -17,10 +17,12 @@ namespace Checkers_Game_Helper
     *   Caretaker is a part of Memento pattern responsible for storing saved mementos in the list and returning requested mementos from history
     *   It uses Singleton as well as only one game history is required for the game. At the end of the game the whole game history can be saved.
     *   But for the new game new one will be created and again only one.
-    ** Last Update: 04/11/2017
+    *       *   This was temporarily changed at the final stage of development. It is no longer Singleton, but the final decision was not made yet.
+
+    ** Last Update: 07/11/2017
     */
 
-        //Singleton class
+    //Singleton class
     public class GameHistory_Caretaker
     {
         private static GameHistory_Caretaker gameHistory;
@@ -40,7 +42,7 @@ namespace Checkers_Game_Helper
         }
 
 //-------------- Class Constructor ------------------------------------------------------------------------
-        private GameHistory_Caretaker()
+        public GameHistory_Caretaker()
         {
             piecePositionsHistory = new List<BoardState_Memento>();
         }
@@ -83,6 +85,11 @@ namespace Checkers_Game_Helper
             {
                 piecePositionsHistory.RemoveRange(chosenPoint , lastIndex - chosenPoint);
             }
+        }
+
+        public int getHistoryLength()
+        {
+            return piecePositionsHistory.Count;
         }
     }
 }

@@ -17,8 +17,9 @@ namespace Checkers_Game_Helper
     *   
     ** Design Patterns Used:
     *   Board is a Singleton class as there is only one board needed to play the game. And it has to be the same for both players
+    *   This was temporarily changed at the final stage of development. It is no longer Singleton, but the final decision was not made yet.
     *
-    ** Last Update: 04/11/2017
+    ** Last Update: 07/11/2017
     */
 
      //Singleton Class
@@ -99,8 +100,14 @@ namespace Checkers_Game_Helper
             sideDesignation = 0;
         }
 
+        public void drawBoard(PiecePosition[,] gridForReplay)
+        {
+            gridXY = gridForReplay;
+            drawBoard();
+        }
+
         //method for reseting the board at start or when quiting the game
-        private void resetBoardPositions()
+        public void resetBoardPositions()
         {
             //writing each row with positions
             for (int y = 0; y < MAX_SIZE; y++)
@@ -116,11 +123,6 @@ namespace Checkers_Game_Helper
                         //setting white pawns
                         if (sideDesignation < 3)
                         {
-//TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                            if (sideDesignation > 0)
-                            {
-                                pawnPiecePosition.IsKing = true;
-                            }
                                 pawnPiecePosition.State = PieceState.White;
                         }
                         //setting red pawns
@@ -155,7 +157,6 @@ namespace Checkers_Game_Helper
             sideDesignation = 0;
             topDesignation = 0;
         }
-
 
         private void drawLetterCoordinates()
         {
@@ -222,7 +223,7 @@ namespace Checkers_Game_Helper
         {
             Console.WriteLine();
             Console.WriteLine();
-            Console.WriteLine("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
+            Console.WriteLine("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n");
             Console.WriteLine("Turn " + turn + ": " + turnColour + " player moves now: ");
             Console.WriteLine("Player 1: " + player1.Name + " " + player1.PawnsColour + " " + player1.NumberOfPawns + "\t\t\tPlayer 2: " + player2.Name + " " + player2.PawnsColour + " " + player2.NumberOfPawns);
             Console.Write("________________________________________________________________________________________");

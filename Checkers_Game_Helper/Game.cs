@@ -17,13 +17,15 @@ namespace Checkers_Game_Helper
     *   
     ** Design Patterns Used:
     *   This class is a Singleton. The reason for this is that we want to have only one active game at the time.
-    *   Another reason is that all related classess need to access some of the game data and it has to be the same for all
+    *   However as the new game can be played afterwards and there would be the need for new game instance this would destroy the idea of Singleton.
+    *   New game objects would have to be created or Singleton would need to have some sort of reset method, which basically ends with the same result.
+    *   The game reset method was implemnented to solve this problem
     *   
     *   This class also uses Memento pattern to store the game history and utilize Undo/Redo feature. 
     *   GameHistory class is the caretaker in memento pattern which stores the history of all moves and allows access to them
     *   Move is the originator that creates the mementos and stores them in the History
     *
-    ** Last Update: 04/11/2017
+    ** Last Update: 07/11/2017
     */
 
     //Singleton Class
@@ -35,6 +37,7 @@ namespace Checkers_Game_Helper
         private GameType gameType;
         private static Game currentGame_Instance;
         private Board gameBoard;
+        
         //memento pattern variables
         private GameHistory_Caretaker gameHistory;
         private Move_Originator move;
@@ -50,12 +53,11 @@ namespace Checkers_Game_Helper
         private String turnColour;
         private int turnNum;
 
-
         //lists of available moves for each turnColour
         private List<int[]> possibleCaptureMoves = new List<int[]>();
         private List<int[]> legalMoves = new List<int[]>();
 
-        //__________________________________________________________________________________________________________
+//__________________________________________________________________________________________________________
         public static Game CurrentGameInstance
         {
             get
@@ -64,6 +66,11 @@ namespace Checkers_Game_Helper
                 {
                     currentGame_Instance = new Game();
                     
+                }
+                //for creating new game after one already has been played
+                else if(currentGame_Instance.winner)
+                {
+                    currentGame_Instance = new Game();
                 }
                 return currentGame_Instance;
             }
@@ -76,12 +83,15 @@ namespace Checkers_Game_Helper
 //-------------- Class Constructor ------------------------------------------------------------------------
         private Game()
         {
-            gameHistory = GameHistory_Caretaker.GameHistory;
+            gameHistory = new GameHistory_Caretaker();
             move = new Move_Originator();
             undoEnabled = false;
             redoEnabled = false;
+            turnNum = 1;
+            winner = false;
+            gameBoard = Board.CurrentBoardInstance;
+            gameBoard.resetBoardPositions();
         }
-
 
 //|||||||||||||||||||||||||||||||||| CLASS METHODS |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -89,36 +99,37 @@ namespace Checkers_Game_Helper
         //used at the begining of the game
         public void setGame(string gameType)
         {
-            gameBoard = Board.CurrentBoardInstance;
+            
             this.gameType = (GameType)Enum.Parse(typeof(GameType), gameType);
             chooseGameType();
 
             //on the start of the game this will change to White
             turnColour = "Red";
-            turnNum = 1;
-            winner = false;
 
-            //saving the state of the game is for replay option
-            saveMoveToGameHistory();
+            //saving the state of the game is for replay option            
+            saveMoveToGameHistory("\nGame Starts! Initial state of the board.\n");
 
-
-            //ask if user wants to use Undo feature
-            Console.WriteLine("_____________________________________________________________________________________________");
-            Console.WriteLine("Do you want to turn on Undo feature that would allow you to roll back the whole turn?");
-            Console.Write("1 for yes, any other key for playing normal. >>> \t");
-            int choice = -1;
-            try
+            //allow undo feature only to human players
+            if (players["White"].GetType() == typeof(Player) || players["Red"].GetType() == typeof(Player))
             {
-                choice = Int32.Parse(Console.ReadLine());
-            }
-            catch (Exception)
-            {
-            }
-            if (choice == 1)
-            {
-                undoEnabled = true;
-                Console.WriteLine("Undo enabled!");
-                Console.WriteLine("____________________________________________________________________________________________");
+                //ask if user wants to use Undo feature
+                Console.WriteLine("_____________________________________________________________________________________________");
+                Console.WriteLine("\nDo you want to turn on Undo feature that would allow you to roll back the whole turn?");
+                Console.Write("1 for yes, any other key for playing normal. >>> \t");
+                int choice = -1;
+                try
+                {
+                    choice = Int32.Parse(Console.ReadLine());
+                }
+                catch (Exception)
+                {
+                }
+                if (choice == 1)
+                {
+                    undoEnabled = true;
+                    Console.WriteLine("Undo enabled!");
+                    Console.WriteLine("____________________________________________________________________________________________");
+                }
             }
             System.Threading.Thread.Sleep(1000);
         }
@@ -147,16 +158,23 @@ namespace Checkers_Game_Helper
                 }
                 case GameType.Player_VS_Player:
                 {
-                    Console.Write("Player 1 please enter your name: >>> \t");
-                    //players.Add(setPlayerDetails());
-                    Console.Write("Player 2 please enter your name: >>> \t");
-                    //players.Add(setPlayerDetails());
-
+                    Console.WriteLine("Player 1.");
+                    Player p1 = setPlayerDetails();
+                    String colour = p1.PawnsColour.ToString();
+                    players[colour] = p1;
+                    Console.WriteLine("Player 2.");
+                    if (colour == "White")
+                    {
+                        players["Red"] = setPlayerDetails("Red");
+                    }
+                    else
+                    {
+                        players["White"] = setPlayerDetails("White");
+                    }
                     break;
                 }
                 case GameType.CPU_VS_CPU:
                 {
-
                     players["White"] = new AI_Player("White");
                     players["Red"] = new AI_Player("Red");
                     break;
@@ -201,6 +219,21 @@ namespace Checkers_Game_Helper
             return new Player(playerName, playerColour);
         }
 
+        private Player setPlayerDetails(String colour)
+        {
+            Console.Write("Please enter your name: >>> \t");
+            String playerName = Console.ReadLine();
+
+            try
+            {
+                playerName = char.ToUpper(playerName[0]) + playerName.Substring(1);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            return new Player(playerName, colour);
+        }
 
         //getting all player's pieces into one list for every turnColour
         //this will be used to check the valid moves as we only do that for currently moving player
@@ -223,7 +256,7 @@ namespace Checkers_Game_Helper
         private bool checkIfWinner(Player currentlyMovingPlayer)
         {
             //checking each player for number of pawns
-            if (currentlyMovingPlayer.NumberOfPawns <= 0)
+            if (currentlyMovingPlayer.NumberOfPawns <= 10)
             {
                 currentlyMovingPlayer.HasWon = false;
                 winner = true;
@@ -260,6 +293,11 @@ namespace Checkers_Game_Helper
                 //If the last turn resulted in 0 pawns for any of the players than the oponent won
                 if (checkIfWinner(currentlyMovingPlayer))
                 {
+                    //draw the current state of the board after the winning move
+                    System.Threading.Thread.Sleep(1000);
+                    Console.WriteLine("|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
+                    gameBoard.drawNames(players["White"], players["Red"], turnColour, turnNum);
+                    gameBoard.drawBoard();
                     System.Threading.Thread.Sleep(1000);
 
                     Console.WriteLine("\n\n");
@@ -267,8 +305,10 @@ namespace Checkers_Game_Helper
                     Console.WriteLine("||||||||||||||| CONGRATULATIONS " + nameOfTheWinner + " HAS WON!!!!!!!!! ||||||||||||||||||||||");
                     Console.WriteLine("|||||||||||||||                                                          ||||||||||||||||||||||");
                     Console.WriteLine("|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||\n");
-                    System.Threading.Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(2000);
 
+                    //saving the last state of the board with the name of the winner
+                    saveMoveToGameHistory("\n||||||||||||||| CONGRATULATIONS " + nameOfTheWinner + " HAS WON!!!!!!!!! ||||||||||||||||||||||\n");
                     break;
                 }
 
@@ -281,9 +321,10 @@ namespace Checkers_Game_Helper
                     
                 //ask player to move
                 playerMove(currentlyMovingPlayer);
-                    
+
+                String playerDetails = "Player " + currentlyMovingPlayer.Name + ": " + currentlyMovingPlayer.PawnsColour + " moves now.";
                 //saving current move to originator and adding to the list of mementos in Caretaker
-                saveMoveToGameHistory();
+                saveMoveToGameHistory(playerDetails);
 
                 //chosing undo is available only to human players
                 if (undoEnabled && currentlyMovingPlayer.GetType() == typeof(Player))
@@ -361,7 +402,6 @@ namespace Checkers_Game_Helper
                 x = piece.XCoordinates;
                 y = piece.YCoordinates;
                 startField = checkFieldState(x, y);
-//Console.WriteLine("\nChecking coordinates " + (char)(x + 65)+(y + 1) + ", colour is " + startField);
                 
                 //check if starting field is players field
                 if (startField == currentlyMovingPlayer.PawnsColour || piece.IsKing)
@@ -374,7 +414,6 @@ namespace Checkers_Game_Helper
                     {
                         //checking LEFT DIAGONAL
                         destinationField = checkFieldState(x - 1, y + 1);
-//Console.WriteLine("Left Diagonal down: Destination " + (char)(x - 1 + 65) + (y + 2) + ", field state: " + destinationField);
                         //if it's empty it's a valid move
                         if (destinationField == PieceState.Valid)
                         {
@@ -388,18 +427,14 @@ namespace Checkers_Game_Helper
                             //if landing field is free this is a valid move and valid capture move
                             if (landingField == PieceState.Valid)
                             {
-//Console.WriteLine("Oponent is aside. Destination " + (char)(x - 2 + 65) + (y + 3) + ", field state: " + destinationField);
                                 //last 2 coordinates added are fot
                                 moveCoordinates = new [] { x, y, x - 2, y + 2, x - 1, y + 1};
                                 possibleCaptureMoves.Add(moveCoordinates);
-//Console.WriteLine("Added to capture moves");
                             }
                         }
 
-
                         //then we check RIGHT DIAGONAL
                         destinationField = checkFieldState(x + 1, y + 1);
-//Console.WriteLine("Right diagonal down: Destination " + (char)(x + 1 + 65) + (y + 2) + ", field state: " + destinationField);
                         if (destinationField == PieceState.Valid)
                         {
                             moveCoordinates = new[] { x, y, x + 1, y + 1, 0, 0 };
@@ -412,10 +447,8 @@ namespace Checkers_Game_Helper
                             //if field is empty then it's a valid move and valid capture move
                             if (landingField == PieceState.Valid)
                             {
-//Console.WriteLine("Oponent is aside. Destination " + (char)(x + 2 + 65) + (y + 3) + ", field state: " + destinationField);
                                 moveCoordinates = new[] { x, y, x + 2, y + 2, x + 1, y + 1 };
                                 possibleCaptureMoves.Add(moveCoordinates);
-//Console.WriteLine("Added to capture moves");
                             }
                         }
                     }
@@ -424,7 +457,6 @@ namespace Checkers_Game_Helper
                     {
                         //LEFT DIAGONAL
                         destinationField = checkFieldState(x - 1, y - 1);
-//Console.WriteLine("Left Diagonal up: Destination " + (char)(x - 1 + 65) + (y) + ", field state: " + destinationField);
                         if (destinationField == PieceState.Valid)
                         {
                             moveCoordinates = new[] { x, y , x - 1, y - 1, 0, 0 };
@@ -433,17 +465,14 @@ namespace Checkers_Game_Helper
                         else if (destinationField == currentlyMovingPlayer.GetOpponent)
                         {
                             landingField = checkFieldState(x - 2, y - 2);
-//Console.WriteLine("Oponent is aside. Destination " + (char)(x - 2 + 65) + (y - 1) + ", field state: " + destinationField);
                             if (landingField == PieceState.Valid)
                             {
                                 moveCoordinates = new[] { x, y, x - 2, y - 2, x - 1, y - 1 };
                                 possibleCaptureMoves.Add(moveCoordinates);
-//Console.WriteLine("Added to capture moves");
                             }
                         }
                         //RIGHT DIAGONAL
                         destinationField = checkFieldState(x + 1, y - 1);
-//Console.WriteLine("Right Diagonal up: Destination " + (char)(x + 1 + 65) + (y) + ", field state: " + destinationField);
                         if (destinationField == PieceState.Valid)
                         {
                             moveCoordinates = new[] { x, y, x + 1, y - 1, 0, 0};
@@ -452,16 +481,13 @@ namespace Checkers_Game_Helper
                         else if (destinationField == currentlyMovingPlayer.GetOpponent)
                         {
                             landingField = checkFieldState(x + 2, y - 2);
-//Console.WriteLine("Oponent is aside. Destination " + (char)(x + 2 + 65) + (y - 1) + ", field state: " + destinationField);
                             if (landingField == PieceState.Valid)
                             {
                                 moveCoordinates = new[] { x, y, x + 2, y - 2 , x + 1, y - 1};
                                 possibleCaptureMoves.Add(moveCoordinates);
-//Console.WriteLine("Added to capture moves");
                             }
                         }
                     }
-//Console.ReadKey();
                 }
             }
         }
@@ -479,9 +505,10 @@ namespace Checkers_Game_Helper
         }
 
 
-        private void saveMoveToGameHistory()
+        private void saveMoveToGameHistory(String movingPlayerDetails)
         {
             move.saveCurrentMove(gameBoard.GridXY);
+            move.savePlayerDetails(movingPlayerDetails);
             GameHistory.addPiecesPositionsToHistory(move.createBoardStateMemento());
             savedFiles++;
             currentMoveNumber++;
@@ -536,16 +563,12 @@ namespace Checkers_Game_Helper
             return false;
         }
 
-        private Boolean undoMove()
+        private void undoMove()
         {
             //undo is possible only if there is at least one move in the history
             if (currentMoveNumber >= 1)
             {
-                //TEST
                 Console.WriteLine("You have undone last move.");
-                //Console.WriteLine("Board after your last move");
-                //gameBoard.drawBoard();
-               // Console.ReadKey();
 
                 //turn goes down as the move is undone
                 turnNum--;
@@ -556,28 +579,18 @@ namespace Checkers_Game_Helper
                 gameBoard.GridXY =
                     move.restoreMoveFromHistory(GameHistory.getPiecePositionsHistory(currentMoveNumber));
 
-                //TEST
-                //Drawing test board
-                //Console.WriteLine("Drawing test board after undo");
-                //Console.WriteLine(
-                //    "_________________________________________________________________________________________\n");
-
                 //redo becomes enabled as the move was undone
                 redoEnabled = true;
-
-                //TEST
-                //gameBoard.drawBoard();
-                //Console.ReadKey();
             }
             else
             {
                 Console.WriteLine("There are no more moves to undo");
-                return false;
+                //return false;
             }
-            return true;
+           // return true;
         }
 
-        private Boolean redoMove()
+        private void redoMove()
         {
             //redo can be chosen only if the selected move is one less than saved ones
             //this means there is at least one new version
@@ -608,9 +621,9 @@ namespace Checkers_Game_Helper
             {
                 Console.WriteLine("There are no more moves to redo.");
                 redoEnabled = false;
-                return false;
+                //return false;
             }
-            return true;
+            //return true;
         }
     }
 

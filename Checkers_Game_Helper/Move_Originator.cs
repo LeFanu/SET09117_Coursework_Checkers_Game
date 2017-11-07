@@ -14,7 +14,7 @@ namespace Checkers_Game_Helper
     ** Design Patterns used:   
     *   Part of the Memento Pattern. Originator is responsible for creating mementos and storing them in Caretaker
     *
-    ** Last Update: 04/11/2017
+    ** Last Update: 07/11/2017
     */
 
 
@@ -22,6 +22,7 @@ namespace Checkers_Game_Helper
     {
         //state of the board with all states of the positions
         private PiecePosition[,] currentPiecesPositions;
+        private String movingPlayerDetails;
 
 //|||||||||||||||||||||||||||||||||| CLASS METHODS |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -39,12 +40,17 @@ namespace Checkers_Game_Helper
             }
         }
 
+        //saving some details about current move for replaying feature
+        public void savePlayerDetails(String playerDetails)
+        {
+            movingPlayerDetails = playerDetails;
+        }
         //creates new state of the board and passes in the copy of the board grid to save
         public BoardState_Memento createBoardStateMemento()
         {
             //Console.WriteLine("Originator saved new state of the board");
 
-            return new BoardState_Memento(currentPiecesPositions);
+            return new BoardState_Memento(currentPiecesPositions, movingPlayerDetails);
         }
 
         //asks caretaker for the copy of the state of the board previously saved to restore that
@@ -55,5 +61,7 @@ namespace Checkers_Game_Helper
 
             return currentPiecesPositions;
         }
+
+
     }
 }

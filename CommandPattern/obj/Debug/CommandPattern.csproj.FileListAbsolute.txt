@@ -1,6 +1,0 @@
-D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\CommandPattern\bin\Debug\CommandPattern.dll
-D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\CommandPattern\bin\Debug\CommandPattern.pdb
-D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\CommandPattern\obj\Debug\CommandPattern.csprojResolveAssemblyReference.cache
-D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\CommandPattern\obj\Debug\CommandPattern.csproj.CoreCompileInputs.cache
-D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\CommandPattern\obj\Debug\CommandPattern.dll
-D:\Moje Dokumenty\Visual Studio 2017\Projects\Checkers_Console_v1\SET09117_Coursework_Checkers_Game\CommandPattern\obj\Debug\CommandPattern.pdb

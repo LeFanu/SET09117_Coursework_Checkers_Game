@@ -52,11 +52,5 @@
     <Compile Include="PieceState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CommandPattern\CommandPattern.csproj">
-      <Project>{4156b172-aed1-482a-b455-cabe78d43282}</Project>
-      <Name>CommandPattern</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

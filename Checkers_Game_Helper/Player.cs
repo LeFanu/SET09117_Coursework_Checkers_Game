@@ -12,11 +12,7 @@ namespace Checkers_Game_Helper
     *   This class holds the list of all player Pawns and array for legal move chosen during the turn
     *   
     *
-    ** Future updates:
-    *   
-    ** Design Patterns Used:
-    *
-    ** Last Update: 04/11/2017
+    ** Last Update: 07/11/2017
     */
 
 
@@ -77,12 +73,10 @@ namespace Checkers_Game_Helper
             if (playerColour.Equals("White"))
             {
                 pawnsColour = PieceState.White;
-                //orientation = "Down";
             }
             else
             {
                 pawnsColour = PieceState.Red;
-                //orientation = "Up";
             }
 
             numberOfPawns = 12;
@@ -199,7 +193,6 @@ namespace Checkers_Game_Helper
                 {
                     playerMove[0] = getColumn(char.ToUpper(startCoordinates[0]));
                     playerMove[1] = getRow(startCoordinates[1]);
-                    //Console.WriteLine("Coordinates " + playerMove[0] + " and " + playerMove[1]);
                 }
                 catch (Exception)
                 {
@@ -229,7 +222,6 @@ namespace Checkers_Game_Helper
                 {
                     playerMove[2] = getColumn(char.ToUpper(destinationCoordinates[0]));
                     playerMove[3] = getRow(destinationCoordinates[1]);
-                    //Console.WriteLine("Coordinates " + playerMove[2] + " and " + playerMove[3]);
                 }
                 catch (Exception)
                 {
@@ -249,6 +241,7 @@ namespace Checkers_Game_Helper
                 Console.WriteLine("Invalid destination coordinates.");
                 return false;
             }
+            //capture coordinates are set to 0 as if there is a capture move this would be displayed to player and it cannot be omitted
             playerMove[4] = 0;
             playerMove[5] = 0;
             return makeMove(playerMove);
@@ -264,7 +257,6 @@ namespace Checkers_Game_Helper
                     changeFieldsOnBoardAfterMove(validMove);
                     return true;
                 }
-
             }
             Console.WriteLine("The move you tried to make was invalid." +
                               "\nPlease remember you can move only 1 field diagonal if it is empty or 2 fields if you plan to capture opponent's piece." +

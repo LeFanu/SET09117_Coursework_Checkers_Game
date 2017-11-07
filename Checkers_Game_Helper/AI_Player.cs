@@ -13,11 +13,7 @@ namespace Checkers_Game_Helper
     *   There is no need to worry about capture moves as they will be only valid ones if they exist.
     *   The rest of the logic happens in superclass
     *
-    ** Future updates:
-    *   
-    ** Design Patterns Used:
-    *
-    ** Last Update: 04/11/2017
+    ** Last Update: 07/11/2017
     */
 
     public class AI_Player : Player
@@ -26,7 +22,7 @@ namespace Checkers_Game_Helper
 
         
 //-------------- Class Constructor ------------------------------------------------------------------------
-        public AI_Player(String colour) : base("Computer", colour)
+        public AI_Player(String colour) : base("Computer_"+colour, colour)
         {
 
         }
