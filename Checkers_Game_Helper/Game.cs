@@ -256,7 +256,7 @@ namespace Checkers_Game_Helper
         private bool checkIfWinner(Player currentlyMovingPlayer)
         {
             //checking each player for number of pawns
-            if (currentlyMovingPlayer.NumberOfPawns <= 10)
+            if (currentlyMovingPlayer.NumberOfPawns <= 0)
             {
                 currentlyMovingPlayer.HasWon = false;
                 winner = true;
