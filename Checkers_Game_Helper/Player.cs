@@ -12,7 +12,7 @@ namespace Checkers_Game_Helper
     *   This class holds the list of all player Pawns and array for legal move chosen during the turn
     *   
     *
-    ** Last Update: 07/11/2017
+    ** Last Update: 13/11/2017
     */
 
 
@@ -25,14 +25,18 @@ namespace Checkers_Game_Helper
 
         protected int numberOfPawns;
         protected PieceState pawnsColour;
-        protected PieceState opponent;
+        private PieceState opponent;
+        //used for multiple jumps
+        private PiecePosition capturingPiece;
+        
 
         //collections of pawns positions with the details about each field
         protected List<PiecePosition> piecesOfThePlayer = new List<PiecePosition>();
         protected List<int[]> legalMoves;
 
-        protected Boolean captureMovePossible;
+        private Boolean captureMovePossible;
 
+        
         //instance of the board for a current game
         protected Board currentBoard = Board.CurrentBoardInstance;
         protected Game currentGame = Game.CurrentGameInstance;
@@ -63,8 +67,23 @@ namespace Checkers_Game_Helper
             get { return piecesOfThePlayer; }
             set { piecesOfThePlayer = value; }
         }
-        public PieceState GetOpponent => opponent;
-        public bool CaptureMovePossible => captureMovePossible;
+        //changes below made to match Visual Studio in JKCC
+        //public PieceState GetOpponent => opponent;
+        public PieceState GetOpponent
+        {
+            get { return opponent; }
+        }
+       // public bool CaptureMovePossible => captureMovePossible;
+        public Boolean CaptureMovePossible
+        {
+            get { return captureMovePossible; }
+        }
+
+        public PiecePosition CapturingPiece
+        {
+            get { return capturingPiece; }
+        }
+
 
 //-------------- Class Constructor ------------------------------------------------------------------------
         public Player(String name, String playerColour)
@@ -99,19 +118,18 @@ namespace Checkers_Game_Helper
         }
 
         //checking if current player has any capture moves
-        public void  canCapture()
+        public bool  canCapture()
         {
             if (currentGame.getPossibleCaptureMoves.Count > 0)
             {
                 //if there are any capture moves player must do them, therefore they are only legal moves
                 captureMovePossible = true;
                 legalMoves = currentGame.getPossibleCaptureMoves;
+                return true;
             }
-            else
-            {
                 captureMovePossible = false;
                 legalMoves = currentGame.getLegalMoves;
-            }
+            return false;
         }
 
         
@@ -276,6 +294,8 @@ namespace Checkers_Game_Helper
             {
                 currentBoard.GridXY[selectedMove[4], selectedMove[5]].State = PieceState.Valid;
                 currentBoard.GridXY[selectedMove[4], selectedMove[5]].IsKing = false;
+                capturingPiece = currentBoard.GridXY[selectedMove[2], selectedMove[3]];
+
             }
             //check if destination field will make this piece a King
             if (pawnsColour == PieceState.White && selectedMove[3] == 7)

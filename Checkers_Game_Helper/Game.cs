@@ -25,7 +25,7 @@ namespace Checkers_Game_Helper
     *   GameHistory class is the caretaker in memento pattern which stores the history of all moves and allows access to them
     *   Move is the originator that creates the mementos and stores them in the History
     *
-    ** Last Update: 07/11/2017
+    ** Last Update: 13/11/2017
     */
 
     //Singleton Class
@@ -40,6 +40,8 @@ namespace Checkers_Game_Helper
         
         //memento pattern variables
         private GameHistory_Caretaker gameHistory;
+
+        
         private Move_Originator move;
         private int currentMoveNumber = -1;
         private int savedFiles = -1;
@@ -56,6 +58,8 @@ namespace Checkers_Game_Helper
         //lists of available moves for each turnColour
         private List<int[]> possibleCaptureMoves = new List<int[]>();
         private List<int[]> legalMoves = new List<int[]>();
+
+
 
 //__________________________________________________________________________________________________________
         public static Game CurrentGameInstance
@@ -75,9 +79,23 @@ namespace Checkers_Game_Helper
                 return currentGame_Instance;
             }
         }
-        public List<int[]> getLegalMoves => legalMoves;
-        public List<int[]> getPossibleCaptureMoves => possibleCaptureMoves;
-        public GameHistory_Caretaker GameHistory => gameHistory;
+        //changes below made to match Visual Studio in JKCC
+        //public List<int[]> getLegalMoves => legalMoves;
+        public List<int[]> getLegalMoves
+        {
+          get { return legalMoves; }
+        }
+        //public List<int[]> getPossibleCaptureMoves => possibleCaptureMoves;
+        public List<int[]> getPossibleCaptureMoves
+        {
+          get { return possibleCaptureMoves; }
+        }
+        //public GameHistory_Caretaker => gameHistory;
+        public GameHistory_Caretaker GameHistory
+        {
+            get { return gameHistory; }
+            set { gameHistory = value; }
+        }
 
 
 //-------------- Class Constructor ------------------------------------------------------------------------
@@ -252,6 +270,15 @@ namespace Checkers_Game_Helper
             currentlyMovingPlayer.NumberOfPawns = currentlyMovingPlayer.PiecesOfThePlayer.Count;
         }
 
+        //version for multiple jumps
+        public void setPlayerPositions(Player currentlyMovingPlayer, PiecePosition piece)
+        {
+            //first clear the current list
+            currentlyMovingPlayer.PiecesOfThePlayer.Clear();
+            currentlyMovingPlayer.PiecesOfThePlayer.Add(piece);
+            
+        }
+
         //checking if any player has won
         private bool checkIfWinner(Player currentlyMovingPlayer)
         {
@@ -355,18 +382,37 @@ namespace Checkers_Game_Helper
                 Console.WriteLine("\nComputer is moving");
                 //making a new reference variable to access AI Player methods
                 AI_Player aiPlayer = (AI_Player) currentlyMovingPlayer;
-               
+
                 //making a move for a computer means selecting a random available move
                 //if this is a capture move the list of legal moves will contain only those
-                aiPlayer.makeRandomMove();
+                if (currentlyMovingPlayer.CaptureMovePossible)
+                {
+                    do
+                    {
+                        aiPlayer.makeRandomMove();
+                        setPlayerPositions(currentlyMovingPlayer, currentlyMovingPlayer.CapturingPiece);
+                        possibleCaptureMoves.Clear();
+                        findLegalMoves(currentlyMovingPlayer);
+                    } while (currentlyMovingPlayer.canCapture());
+                }
+                else
+                {
+                    aiPlayer.makeRandomMove();
+                }
             }
             //if it's human asking what moves to make
             else
             {
                 if (currentlyMovingPlayer.CaptureMovePossible)
                 {
-                    //if human player can capture we want to ask which capture move to choose
-                      currentlyMovingPlayer.showAndSelectCaptureMoves();
+                    do
+                    {
+                        //if human player can capture we want to ask which capture move to choose
+                        currentlyMovingPlayer.showAndSelectCaptureMoves();
+                        setPlayerPositions(currentlyMovingPlayer, currentlyMovingPlayer.CapturingPiece);
+                        possibleCaptureMoves.Clear();
+                        findLegalMoves(currentlyMovingPlayer);
+                    } while (currentlyMovingPlayer.canCapture());
                 }
                 else
                 {
@@ -389,7 +435,7 @@ namespace Checkers_Game_Helper
             int x;
             int y;
             //coordinates for valid move
-            int[] moveCoordinates = new int[6];
+            //int[] moveCoordinates = new int[6];
 
             
             //checking each piece of currently moving player
@@ -397,8 +443,6 @@ namespace Checkers_Game_Helper
             {
                 //states of fields needed for deciding if this is a valid move
                 PieceState startField;
-                PieceState destinationField;
-                PieceState landingField;
                 x = piece.XCoordinates;
                 y = piece.YCoordinates;
                 startField = checkFieldState(x, y);
@@ -412,86 +456,113 @@ namespace Checkers_Game_Helper
                     //if goes down
                     if (currentlyMovingPlayer.PawnsColour == PieceState.White || piece.IsKing)
                     {
-                        //checking LEFT DIAGONAL
-                        destinationField = checkFieldState(x - 1, y + 1);
-                        //if it's empty it's a valid move
-                        if (destinationField == PieceState.Valid)
-                        {
-                            moveCoordinates = new [] { x, y, x - 1 , y + 1, 0, 0};
-                            legalMoves.Add(moveCoordinates);
-                        }
-                        //if it's opponent's colour we check if capturing is possible
-                        else if (destinationField == currentlyMovingPlayer.GetOpponent)
-                        {
-                            landingField = checkFieldState( x - 2, y + 2);
-                            //if landing field is free this is a valid move and valid capture move
-                            if (landingField == PieceState.Valid)
-                            {
-                                //last 2 coordinates added are fot
-                                moveCoordinates = new [] { x, y, x - 2, y + 2, x - 1, y + 1};
-                                possibleCaptureMoves.Add(moveCoordinates);
-                            }
-                        }
-
-                        //then we check RIGHT DIAGONAL
-                        destinationField = checkFieldState(x + 1, y + 1);
-                        if (destinationField == PieceState.Valid)
-                        {
-                            moveCoordinates = new[] { x, y, x + 1, y + 1, 0, 0 };
-                            legalMoves.Add(moveCoordinates);
-                        }
-                        //if it's opponent field we check if there is a capture move
-                        else if (destinationField == currentlyMovingPlayer.GetOpponent)
-                        {
-                            landingField = checkFieldState(x + 2, y + 2);
-                            //if field is empty then it's a valid move and valid capture move
-                            if (landingField == PieceState.Valid)
-                            {
-                                moveCoordinates = new[] { x, y, x + 2, y + 2, x + 1, y + 1 };
-                                possibleCaptureMoves.Add(moveCoordinates);
-                            }
-                        }
+                        movingDownwards(x,y,currentlyMovingPlayer);
                     }
                     //if goes up
                     if (currentlyMovingPlayer.PawnsColour == PieceState.Red || piece.IsKing)
                     {
-                        //LEFT DIAGONAL
-                        destinationField = checkFieldState(x - 1, y - 1);
-                        if (destinationField == PieceState.Valid)
-                        {
-                            moveCoordinates = new[] { x, y , x - 1, y - 1, 0, 0 };
-                            legalMoves.Add(moveCoordinates);
-                        }
-                        else if (destinationField == currentlyMovingPlayer.GetOpponent)
-                        {
-                            landingField = checkFieldState(x - 2, y - 2);
-                            if (landingField == PieceState.Valid)
-                            {
-                                moveCoordinates = new[] { x, y, x - 2, y - 2, x - 1, y - 1 };
-                                possibleCaptureMoves.Add(moveCoordinates);
-                            }
-                        }
-                        //RIGHT DIAGONAL
-                        destinationField = checkFieldState(x + 1, y - 1);
-                        if (destinationField == PieceState.Valid)
-                        {
-                            moveCoordinates = new[] { x, y, x + 1, y - 1, 0, 0};
-                            legalMoves.Add(moveCoordinates);
-                        }
-                        else if (destinationField == currentlyMovingPlayer.GetOpponent)
-                        {
-                            landingField = checkFieldState(x + 2, y - 2);
-                            if (landingField == PieceState.Valid)
-                            {
-                                moveCoordinates = new[] { x, y, x + 2, y - 2 , x + 1, y - 1};
-                                possibleCaptureMoves.Add(moveCoordinates);
-                            }
-                        }
+                        movingUpwards(x,y,currentlyMovingPlayer);
                     }
                 }
             }
         }
 
+
+        private void movingUpwards(int x, int y, Player currentlyMovingPlayer)
+        {
+            int[] moveCoordinates = new int[6];
+            PieceState startField;
+            PieceState destinationField;
+            PieceState landingField;
+
+            //LEFT DIAGONAL
+            destinationField = checkFieldState(x - 1, y - 1);
+            
+            if (destinationField == currentlyMovingPlayer.GetOpponent)
+            {
+                landingField = checkFieldState(x - 2, y - 2);
+                if (landingField == PieceState.Valid)
+                {
+                    moveCoordinates = new[] { x, y, x - 2, y - 2, x - 1, y - 1 };
+                    possibleCaptureMoves.Add(moveCoordinates);
+                }
+            }
+            else if (destinationField == PieceState.Valid)
+            {
+                moveCoordinates = new[] { x, y, x - 1, y - 1, 0, 0 };
+                legalMoves.Add(moveCoordinates);
+            }
+            //RIGHT DIAGONAL
+            destinationField = checkFieldState(x + 1, y - 1);
+            
+            if (destinationField == currentlyMovingPlayer.GetOpponent)
+            {
+                landingField = checkFieldState(x + 2, y - 2);
+                if (landingField == PieceState.Valid)
+                {
+                    moveCoordinates = new[] { x, y, x + 2, y - 2, x + 1, y - 1 };
+                    possibleCaptureMoves.Add(moveCoordinates);
+                }
+            }
+            else if (destinationField == PieceState.Valid)
+            {
+                moveCoordinates = new[] { x, y, x + 1, y - 1, 0, 0 };
+                legalMoves.Add(moveCoordinates);
+            }
+        }
+        private void movingDownwards(int x, int y, Player currentlyMovingPlayer)
+        {
+            int[] moveCoordinates = new int[6];
+            PieceState startField;
+            PieceState destinationField;
+            PieceState landingField;
+            //checking LEFT DIAGONAL
+            destinationField = checkFieldState(x - 1, y + 1);
+            //if it's empty it's a valid move
+            
+            //if it's opponent's colour we check if capturing is possible
+            if (destinationField == currentlyMovingPlayer.GetOpponent)
+            {
+                landingField = checkFieldState(x - 2, y + 2);
+                //if landing field is free this is a valid move and valid capture move
+                if (landingField == PieceState.Valid)
+                {
+                    //last 2 coordinates added are fot
+                    moveCoordinates = new[] { x, y, x - 2, y + 2, x - 1, y + 1 };
+                    possibleCaptureMoves.Add(moveCoordinates);
+                }
+            }
+            else if (destinationField == PieceState.Valid)
+            {
+                moveCoordinates = new[] { x, y, x - 1, y + 1, 0, 0 };
+                legalMoves.Add(moveCoordinates);
+            }
+
+            //then we check RIGHT DIAGONAL
+            destinationField = checkFieldState(x + 1, y + 1);
+            
+            //if it's opponent field we check if there is a capture move
+            if (destinationField == currentlyMovingPlayer.GetOpponent)
+            {
+                landingField = checkFieldState(x + 2, y + 2);
+                //if field is empty then it's a valid move and valid capture move
+                if (landingField == PieceState.Valid)
+                {
+                    moveCoordinates = new[] { x, y, x + 2, y + 2, x + 1, y + 1 };
+                    possibleCaptureMoves.Add(moveCoordinates);
+                }
+            }
+            else if (destinationField == PieceState.Valid)
+            {
+                moveCoordinates = new[] { x, y, x + 1, y + 1, 0, 0 };
+                legalMoves.Add(moveCoordinates);
+            }
+        }
+        private void movingKings(int x, int y, Player currentPlayer)
+        {
+            movingUpwards(x, y, currentPlayer);
+            movingDownwards(x,y,currentPlayer);
+        }
         //checking the state of the requested field on the board
         public PieceState checkFieldState(int x, int y)
         {

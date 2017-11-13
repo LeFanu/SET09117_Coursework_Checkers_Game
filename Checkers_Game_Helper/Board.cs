@@ -19,7 +19,7 @@ namespace Checkers_Game_Helper
     *   Board is a Singleton class as there is only one board needed to play the game. And it has to be the same for both players
     *   This was temporarily changed at the final stage of development. It is no longer Singleton, but the final decision was not made yet.
     *
-    ** Last Update: 07/11/2017
+    ** Last Update: 13/11/2017
     */
 
      //Singleton Class
@@ -176,21 +176,26 @@ namespace Checkers_Game_Helper
         //method for printing board fields depending on the state
         private String fieldState(int x, int y)
         {
-            Enum fieldState = gridXY[x, y].State;
+            //changes below made to match Visual Studio in JKCC
+            int fieldState = (int)gridXY[x, y].State;
+
             String fieldDesignation = " ";
             switch (fieldState)
             {
-                case PieceState.Invalid:
+                //case PieceState.Invalid:
+                case -1:
                 {
                     fieldDesignation = "__";
                     break;
                 }
-                case PieceState.Valid:
+                //case PieceState.Valid:
+                case 0:
                 {
                     fieldDesignation = "  ";
                         break;
                 }
-                case PieceState.White:
+                // case PieceState.White:
+                case 1:
                 {
                     if (gridXY[x,y].IsKing)
                     {
@@ -202,7 +207,8 @@ namespace Checkers_Game_Helper
                     }
                     break;
                 }
-                case PieceState.Red:
+                //case PieceState.Red:
+                case 2:
                 {
                     if (gridXY[x, y].IsKing)
                     {

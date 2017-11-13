@@ -24,6 +24,7 @@ namespace Checkers_Game_Helper
         private PiecePosition[,] piecesPositions;
         private String playerDetails;
 
+        
         //constructor
         public BoardState_Memento(PiecePosition[,] piecesPositions, String playerDetails)
         {
@@ -31,8 +32,17 @@ namespace Checkers_Game_Helper
             this.playerDetails = playerDetails;
         }
 
-        public PiecePosition[,] getPiecesPositions => piecesPositions;
+        //changes below made to match Visual Studio in JKCC
+        //public PiecePosition[,] getPiecesPositions => piecesPositions;
+        public PiecePosition[,] getPiecesPositions
+        {
+            get { return piecesPositions; }
+        }
+        //public string getPlayerDetails => playerDetails;
+        public String getPlayerDetails
+        {
+            get { return playerDetails; }
+        }
 
-        public string getPlayerDetails => playerDetails;
     }
 }

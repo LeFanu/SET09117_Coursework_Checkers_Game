@@ -9,6 +9,7 @@ using Checkers_Console_v1;
 using Checkers_Game_Helper;
 
 
+
 namespace Checkers_Console_v1
 {
     class Program
